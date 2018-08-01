@@ -4,11 +4,11 @@
 
 	NEWL DB 0DH,0AH,"$"
 	
-	LGIN DB 0DH,0AH,"ENTER PASSWORD : $"
-	LGIN_ERROR DB 0DH,0AH,"                 INVALID LOGIN, PLEASE TRY AGAIN.$"
+	LGIN DB 0DH,0AH,"   ENTER PASSWORD : $"
+	LGIN_ERROR DB 0DH,0AH,"                    INVALID LOGIN, PLEASE TRY AGAIN.$"
 	
-	LBRK DB 0DH,0AH,"=================================$"
-	WLCM DB 0DH,0AH,"Welcome to New Zealand Apple Farm$"
+	LBRK DB 0DH,0AH,"=======================================$"
+	WLCM DB 0DH,0AH,"   Welcome to New Zealand Apple Farm$"
 	
 	MENU DB 0DH,0AH,"   Select a report$"
 	MEN1 DB 0DH,0AH,"1. Employee's Weekly Hours$"
@@ -19,7 +19,9 @@
 	MENU_ERROR DB 0DH,0AH,"                     INVALID SELECTION.$"
 	
 	CONT DB 0DH,0AH,"Continue? (Y/N) : $"
-
+	INPUT_ERROR DB 0DH,0AH,"                                  INVALID INPUT$"
+	MENU1IN DB 0DH,0AH,"   Enter hour worked on $"
+	
 	DAY DB "Monday   $"	;Array of strings of days
 		DB "Tuesday  $" ;10 CHARACTER
 		DB "Wednesday$"
@@ -27,6 +29,8 @@
 		DB "Friday   $"
 		DB "Saturday $"
 		DB "Sunday   $"
+	DAYPH	DB 7 DUP(?)	;DAY POINTER HIGH	;I would use 'DW' if index isn't increment of 2
+	DAYPL	DB 7 DUP(?)	;DAY POINTER LOW
 			
 	APPLE	DB "Braeburn      $" ;Array of strings of Apples
 			DB "Fuji          $" ;15 CHARACTER
@@ -36,6 +40,15 @@
 			DB "NZ Queen      $"
 			DB "Red Delicious $" 
 			DB "Royal Gala    $"
+	APPLE_RATE	DB 172
+				DB 228
+				DB 144
+				DB 128
+				DB 112
+				DB 114
+				DB 124
+				DB 108
+	
 	;VALUE DB 7 DUP(0)	;actual command
 	
 	VALUE	DB 0		;for debugging use only
@@ -45,7 +58,14 @@
 			DB 4 
 			DB 5 
 			DB 6 
-	RESULT	DW 123
+	RESULTB	DB ?
+			DB ?
+			DB ?
+			DB ?
+			DB ?
+			DB ?
+			DB 78
+	RESULTW	DW 123
 			DW 234
 			DW 345
 			DW 456
@@ -56,6 +76,9 @@
 			DB ?
 			DB ?
 	
+	INDENT	DB "   $"
+	COLON	DB " : $"
+	SPACE	DB "         $"
 	TENB 	DB 10
 	TENW 	DW 10
 	TWO 	DB 2
@@ -64,6 +87,11 @@
 	PASS_IN	DB 9 DUP (?)
 	INPUT	DB ?
 	
+	HOUR_RATE		DB 7
+	TTL_HOUR_PAY	DB 0
+	TTL_BIN_VALUE	DB 0
+	
+	AXX DW ?
 	CXX DW ?	;TO SAVE LOOP COUNTER
 	SII DW ?	;
 	
@@ -132,36 +160,84 @@ MENU1 PROC
 	LEA DX,NEWL	;
 	INT 21H		;
 	
-	MOV CX,7	;7 DAYS A WEEK	;MIGHT NEED TO MIGRATE THIS INTO A FUNTION LATER
+	MOV CX,7	;7 DAYS A WEEK
 	MOV SI,0
-	REPORT1:	
+	INPUTM1:	
 		MOV CXX,CX	;CXX = CX	;SAVE LOOP COUNTER FOR LATER
 
 					;STRING
 		MOV AH,09H	;
-		LEA DX,NEWL	;
+		LEA DX,MENU1IN	;
 		INT 21H		;
 		
 		MOV AX,SI	;Multiply 10 as each DAY strings are 10 char in length.
 		MUL TENB	;Multiply with the SI index value and add with DAY address
-					;
+		MOV AXX, AX
+		
 		MOV AH,09H	;and we'll get the next DAY location.
 		LEA DX,DAY	;
-		ADD DL,AL	;DL = AL = SI * 10
+		ADD DX,AXX	;DL = AL = SI * 10
 		INT 21H		;
+		MOV DAYPH[SI], DH;SAVE POINTER FOR LATER
+		MOV DAYPL[SI], DL;SAVE POINTER FOR LATER
+					;
+		LEA DX, COLON;DISPLAY COLON
+		INT 21H
 		
-					;CHARACTER
-		MOV AH,02H	;
-		MOV DL,VALUE[SI]
-		ADD DL,48	;--OFFSETTING ASCII VALUES (0 BEGINS AT 48)
+		MOV AH,01H	;INPUT SINGLE CHARACTER
 		INT 21H		;
+		SUB AL, 48	;
+		MOV VALUE[SI], AL
 		
-		CALL DISPLAYDW
+		MUL HOUR_RATE
+		MOV RESULTB[SI], AL
 		
 		MOV CX,CXX	;CX = CXX	;RE-WRITE LOOP COUNTER
 		INC SI		;
-	LOOP REPORT1
+	LOOP INPUTM1
 	
+	MOV CX,7	;7 DAYS A WEEK	
+	MOV SI,0
+	REPORTM1:	;PRINTING REPORT
+		MOV CXX,CX	;CXX = CX	;SAVE LOOP COUNTER FOR LATER
+
+					;STRING
+		MOV AH,09H	;
+		LEA DX,NEWL	;NEW LINE
+		INT 21H		;
+		LEA DX,INDENT;INDENT
+		INT 21H
+		MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+		MOV DL,DAYPL[SI]	;THIS INGENUITY IS MADE POSSIBLE BY VERNIY xD	
+		INT 21H			
+		
+		MOV AH,09H
+		LEA DX,SPACE		;SPACE
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,VALUE[SI]	;Entered Value
+		ADD DL,48
+		INT 21H
+		
+		MOV AH,09H
+		LEA DX,SPACE		;SPACE
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,HOUR_RATE	;Constant Hourly Rate
+		ADD DL,48
+		INT 21H
+		
+		MOV AH,09H
+		LEA DX,SPACE		;SPACE
+		INT 21H
+		
+		CALL DISPLAYDB		;Multiplied value
+		
+		MOV CX,CXX	;CX = CXX	;RE-WRITE LOOP COUNTER
+		INC SI		;
+	LOOP REPORTM1
 	
 	RET
 MENU1 ENDP
@@ -173,6 +249,7 @@ MENU2 PROC
 	LEA DX,NEWL	;
 	INT 21H		;
 	
+	CALL DISPLAYDW
 	
 	RET
 MENU2 ENDP
@@ -188,12 +265,37 @@ MENU3 PROC
 	RET
 MENU3 ENDP
 
+DISPLAYDB PROC
+	MOV SII, SI ;SAVE FOR A LATER
+
+	MOV AH,	0
+	MOV AL, RESULTB[SI]	;AL = 23
+	
+	DIV TENB			;AL = 2		;AH = 3
+	MOV DISREST[1], AH	;
+	MOV DISREST[0], AL	;
+	
+				;1ST DIGIT
+	MOV AH,02H	;
+	MOV DL,DISREST[0]
+	ADD DL,48	;
+	INT 21H		;
+				;2ND DIGIT
+	MOV DL,DISREST[1]
+	ADD DL,48	;
+	INT 21H		;
+	
+	MOV SI, SII	;RE-INSTATEING 
+	
+	RET
+DISPLAYDB ENDP
+
 DISPLAYDW PROC
 	MOV SII, SI 	;SAVE FOR A LATER
 
 	MOV DX,0
 	ADD SI, SI
-	ADD SI, OFFSET RESULT
+	ADD SI, OFFSET RESULTW
 	MOV AX, [SI]
 	
 	DIV TENW			;AX = 23	;DX = 4
@@ -253,14 +355,17 @@ MAIN PROC
 	MOV DS,AX
 	;----BEGIN----
 	CALL LOGIN	;PROCEED WHEN LOGIN INFO IS VALID
-	Q:			;WELCOME
+	Q:			;
 	MOV AH,09H	;
-	LEA DX,LBRK ;	Horizontal Line
+	LEA DX,LBRK ;   ===============
 	INT 21H		;
 	LEA DX,WLCM ;	Welcome message
 	INT 21H		;
-	LEA DX,LBRK ;	Horizontal Line
+	LEA DX,LBRK ;   ===============
 	INT 21H		;
+	
+	MOV TTL_HOUR_PAY , 0	;INITIALIZING TO ZERO
+	MOV TTL_BIN_VALUE, 0	;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
 	
 	SELECTMENU:	;MENU
 	MOV AH,09H	;
@@ -276,8 +381,8 @@ MAIN PROC
 	INT 21H		;
 	LEA DX,MENI	;	"   Enter selection : $"
 	INT 21H		;
-				;INPUT SINGLE CHARACTER
-	MOV AH,01H	;
+				;
+	MOV AH,01H	;INPUT SINGLE CHARACTER
 	INT 21H		;
 	
 	CMP AL, "1"
