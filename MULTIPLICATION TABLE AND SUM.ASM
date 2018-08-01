@@ -1,0 +1,110 @@
+.MODEL SMALL
+.STACK 100
+.DATA
+	NUM1 DB "1"
+	SUM DB 0
+	STR1 DB " x $"
+	STR2 DB " = $"
+	NL DB 0DH,0AH,"$"
+	TEN DB 10
+	THREE DB 3
+.CODE
+MAIN PROC
+	MOV AX,@DATA
+	MOV DS,AX
+	;----BEGIN----
+
+	MOV CX, 9;
+	
+SHOW:
+				;NUMBER 1
+	MOV AH,02H	;
+	MOV DL,NUM1	;
+	INT 21H		;
+
+				;" X "
+	MOV AH,09H	;
+	LEA DX,STR1	;
+	INT 21H		;
+
+				;CONST 3
+	MOV AH,02H	;
+	MOV DL,3	;
+	ADD DL,48	;
+	INT 21H		;
+
+				;" = "
+	MOV AH,09H	;
+	LEA DX,STR2 ;
+	INT 21H		;
+
+	MOV AL, NUM1;AL = NUM1
+	SUB AL, 48	;
+	MUL THREE	;AL = AL * 3
+	ADD SUM, AL	;SUM = SUM + AL
+					
+				;DIVISION
+	MOV AH,0	;
+	DIV TEN		;AL = QUOTIENT, AH = REMAINDER
+	MOV BX, AX	;PREVENT DATA LOSS
+	
+				;2ND DIGIT
+	MOV AH,02H	;
+	MOV DL,BL	;
+	ADD DL,48	;
+	INT 21H		;
+	
+				;1ST DIGIT
+	MOV DL,BH	;
+	ADD DL,48	;
+	INT 21H		;
+
+				;NEW LINE
+	MOV AH,09H	;
+	LEA DX,NL	;
+	INT 21H		;
+
+	
+	INC NUM1;
+LOOP SHOW	;
+	
+				;NEW LINE
+	MOV AH,09H	;
+	LEA DX,NL	;
+	INT 21H		;
+
+				;DIVISION
+	MOV AH,0	;
+	MOV AL,SUM	;AL = 135	;AL = 0 
+	DIV TEN		;AL = 13	;AH = 5
+	MOV BX, AX	;BL = 13	;BH = 5
+
+	MOV AH,0	;
+	MOV AL,BL	;AL = 13	;AH = 0
+	DIV TEN		;AL = 1		;AH = 3
+	MOV CX, AX	;CL = 1		;CH = 3
+	
+				;3RD DIGIT
+	MOV AH,02H	;
+	MOV DL,CL	;
+	ADD DL,48	;
+	INT 21H		;
+
+				;2ND DIGIT
+	MOV AH,02H	;
+	MOV DL,CH	;
+	ADD DL,48	;
+	INT 21H		;
+
+				;1ST DIGIT
+	MOV AH,02H	;
+	MOV DL,BH	;
+	ADD DL,48	;
+	INT 21H		;
+
+
+	;----END----
+	MOV AX,4C00H
+	INT 21H
+MAIN ENDP
+END MAIN
