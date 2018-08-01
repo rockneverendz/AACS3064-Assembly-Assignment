@@ -5,7 +5,7 @@
 	NEWL DB 0DH,0AH,"$"
 	
 	LGIN DB 0DH,0AH,"ENTER PASSWORD : $"
-	LGIN_ERROR DB 0DH,0AH,"INVALID LOGIN, PLEASE TRY AGAIN.$"
+	LGIN_ERROR DB 0DH,0AH,"                 INVALID LOGIN, PLEASE TRY AGAIN.$"
 	
 	LBRK DB 0DH,0AH,"=================================$"
 	WLCM DB 0DH,0AH,"Welcome to New Zealand Apple Farm$"
@@ -15,7 +15,9 @@
 	MEN2 DB 0DH,0AH,"2. Employee's Weekly Task$"
 	MEN3 DB 0DH,0AH,"3. Employee's Weekly Salary$"
 	MEN0 DB 0DH,0AH,"0. Exit$"
-	MENU_ERROR DB 0DH,0AH,"INVALID INPUT.$"
+	MENI DB 0DH,0AH,0DH,0AH,"   Enter selection : $"
+	MENU_ERROR DB 0DH,0AH,"                     INVALID SELECTION.$"
+	
 	CONT DB 0DH,0AH,"Continue? (Y/N) : $"
 
 	DAY DB "Monday   $"	;Array of strings of days
@@ -272,7 +274,8 @@ MAIN PROC
 	INT 21H		;
 	LEA DX,MEN0 ;	"0. Exit"
 	INT 21H		;
-	
+	LEA DX,MENI	;	"   Enter selection : $"
+	INT 21H		;
 				;INPUT SINGLE CHARACTER
 	MOV AH,01H	;
 	INT 21H		;
