@@ -7,8 +7,9 @@
 	LGIN DB 0DH,0AH,"   ENTER PASSWORD : $"
 	LGIN_ERROR DB 0DH,0AH,"                    INVALID LOGIN, PLEASE TRY AGAIN.$"
 	
-	LBRK DB 0DH,0AH,"=======================================$"
-	WLCM DB 0DH,0AH,"   Welcome to New Zealand Apple Farm$"
+	WLC1 DB 0DH,0AH,201,37 DUP (205),187,"$"
+	WLC2 DB 0DH,0AH,186,"  Welcome to New Zealand Apple Farm  ",186,"$"
+	WLC3 DB 0DH,0AH,200,37 DUP (205),188,"$"
 	
 	MENU DB 0DH,0AH,"   Select a report$"
 	MEN1 DB 0DH,0AH,"1. Employee's Weekly Hours$"
@@ -19,8 +20,21 @@
 	MENU_ERROR DB 0DH,0AH,"                     INVALID SELECTION.$"
 	
 	CONT DB 0DH,0AH,"   Continue? (Y/N) : $"
-	INPUT_ERROR DB 0DH,0AH,"                                     INVALID INPUT$"
+	INPUT_ERROR DB 0DH,0AH,"                                    INVALID INPUT$"
+	
 	MENU1IN DB 0DH,0AH,"   Enter hour worked on $"
+	MENU1RE1 DB 0DH,0AH,"  ",218,10 DUP (196),194,9 DUP (196),194,9 DUP (196),194,10 DUP (196),191,"$"
+	MENU1RE2 DB 0DH,0AH,"  ",179," Day      ",179," Hours   ",179,"Hour Rate",179,"Total Pay ",179,"$"
+	MENU1RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,9 DUP (196),197,9 DUP (196),197,10 DUP (196),180,"$"
+	MENU1RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,9 DUP (205),216,9 DUP (205),216,10 DUP (205),181,"$"
+	MENU1RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"         ",179,"         ",179,"          ",179,"$"
+	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,9 DUP (205),207,9 DUP (205),207,10 DUP (205),190,"$"
+	
+	;┌─┬┐	;218	;196	;194	;191		
+	;│ ││	;179			;179	;179
+	;├─┼┤	;195	;196	;197	;180
+	;└─┴┘	;192	;196	;193	;217
+	
 	
 	DAY DB "Monday   $"	;Array of strings of days
 		DB "Tuesday  $" ;10 CHARACTER
@@ -76,9 +90,9 @@
 			DB ?
 			DB ?
 	
-	INDENT	DB "   $"
+	INDENT	DB "  ",179,"$"
+	SPACE	DB " ",179,"       $"
 	COLON	DB " : $"
-	SPACE	DB "         $"
 	TENB 	DB 10
 	TENW 	DW 10
 	TWO 	DB 2
@@ -88,6 +102,7 @@
 	INPUT	DB ?
 	
 	HOUR_RATE		DB 7
+	TTL_HOUR		DB 0
 	TTL_HOUR_PAY	DB 0
 	TTL_BIN_VALUE	DB 0
 	
@@ -159,6 +174,7 @@ MENU1 PROC
 	INT 21H		;
 	LEA DX,NEWL	;
 	INT 21H		;
+	MOV TTL_HOUR, 0 ;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
 	
 	MOV CX,7	;7 DAYS A WEEK
 	MOV SI,0
@@ -185,13 +201,36 @@ MENU1 PROC
 		MOV AH,01H	;INPUT SINGLE CHARACTER
 		INT 21H		;
 		SUB AL, 48	;
-		MOV VALUE[SI], AL
+		CMP AL, 0	;
+		JL  INPUTM1_INVALID ;INPUT < 0
+		CMP AL, 9	;
+		JG  INPUTM1_INVALID	;INPUT > 9
+		JMP INPUTM1_VALID	;0 <= INPUT <= 9
+		
+		INPUTM1_INVALID:
+		MOV AH,09H	;
+		LEA DX,INPUT_ERROR	;
+		INT 21H		;
+		JMP INPUTM1	;
+		
+		INPUTM1_VALID:
+		MOV VALUE[SI], AL	;STORE IN 'HOURS' 
+		ADD TTL_HOUR , AL	;SUM OF 'HOURS'
 		
 		MUL HOUR_RATE
-		MOV RESULTB[SI], AL
+		MOV RESULTB[SI] , AL;STORE IN 'TOTAL PAY'
+		ADD TTL_HOUR_PAY, AL;SUM OF 'TOTAL PAY'
 		
 		INC SI		;
 	LOOP INPUTM1
+	
+	MOV AH, 09H
+	LEA DX, MENU1RE1
+	INT 21H
+	LEA DX, MENU1RE2
+	INT 21H
+	LEA DX, MENU1RE3
+	INT 21H
 	
 	MOV CX,7	;7 DAYS A WEEK	
 	MOV SI,0
@@ -230,8 +269,42 @@ MENU1 PROC
 		
 		CALL DISPLAYDB		;Display Multiplied value
 		
+		MOV AH,09H
+		LEA DX,SPACE		;SPACE
+		INT 21H
+		
 		INC SI		;
 	LOOP REPORTM1
+	
+	LEA DX, MENU1RE4
+	INT 21H
+	
+	MOV AH,	0
+	MOV AL, TTL_HOUR	;AL = 23
+
+	DIV TENB			;AL = 2		;AH = 3
+	ADD AL, 48
+	ADD AH, 48
+	MOV SI, 22
+	MOV MENU1RE5[SI]  , AL	;
+	MOV MENU1RE5[SI+1], AH	;
+
+	MOV AH,	0
+	MOV AL, TTL_HOUR_PAY;AL = 23
+
+	DIV TENB			;AL = 2		;AH = 3
+	ADD AL, 48
+	ADD AH, 48
+	MOV SI, 43
+	MOV MENU1RE5[SI]  , AL	;
+	MOV MENU1RE5[SI+1], AH	;
+	
+	MOV AH,09H
+	LEA DX, MENU1RE5
+	INT 21H
+	
+	LEA DX, MENU1RE6
+	INT 21H
 	
 	RET
 MENU1 ENDP
@@ -260,8 +333,6 @@ MENU3 PROC
 MENU3 ENDP
 
 DISPLAYDB PROC
-	MOV SII, SI ;SAVE FOR A LATER
-
 	MOV AH,	0
 	MOV AL, RESULTB[SI]	;AL = 23
 	
@@ -278,8 +349,6 @@ DISPLAYDB PROC
 	MOV DL,DISREST[1]
 	ADD DL,48	;
 	INT 21H		;
-	
-	MOV SI, SII	;RE-INSTATEING 
 	
 	RET
 DISPLAYDB ENDP
@@ -348,14 +417,14 @@ MAIN PROC
 	MOV AX,@DATA
 	MOV DS,AX
 	;----BEGIN----
-	CALL LOGIN	;PROCEED WHEN LOGIN INFO IS VALID
+;	CALL LOGIN	;PROCEED WHEN LOGIN INFO IS VALID
 	Q:			;
 	MOV AH,09H	;
-	LEA DX,LBRK ;   ===============
+	LEA DX,WLC1 ;   ===============
 	INT 21H		;
-	LEA DX,WLCM ;	Welcome message
+	LEA DX,WLC2 ;	Welcome message
 	INT 21H		;
-	LEA DX,LBRK ;   ===============
+	LEA DX,WLC3 ;   ===============
 	INT 21H		;
 	
 	MOV TTL_HOUR_PAY , 0	;INITIALIZING TO ZERO
