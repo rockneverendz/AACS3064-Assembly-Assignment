@@ -18,8 +18,8 @@
 	MENI DB 0DH,0AH,0DH,0AH,"   Enter selection : $"
 	MENU_ERROR DB 0DH,0AH,"                     INVALID SELECTION.$"
 	
-	CONT DB 0DH,0AH,"Continue? (Y/N) : $"
-	INPUT_ERROR DB 0DH,0AH,"                                  INVALID INPUT$"
+	CONT DB 0DH,0AH,"   Continue? (Y/N) : $"
+	INPUT_ERROR DB 0DH,0AH,"                                     INVALID INPUT$"
 	MENU1IN DB 0DH,0AH,"   Enter hour worked on $"
 	
 	DAY DB "Monday   $"	;Array of strings of days
@@ -162,9 +162,7 @@ MENU1 PROC
 	
 	MOV CX,7	;7 DAYS A WEEK
 	MOV SI,0
-	INPUTM1:	
-		MOV CXX,CX	;CXX = CX	;SAVE LOOP COUNTER FOR LATER
-
+	INPUTM1:
 					;STRING
 		MOV AH,09H	;
 		LEA DX,MENU1IN	;
@@ -172,11 +170,11 @@ MENU1 PROC
 		
 		MOV AX,SI	;Multiply 10 as each DAY strings are 10 char in length.
 		MUL TENB	;Multiply with the SI index value and add with DAY address
-		MOV AXX, AX
+		MOV AXX, AX	;(01/08) cannot rely on AL as the carry WILL NOT carry over to AH
 		
 		MOV AH,09H	;and we'll get the next DAY location.
 		LEA DX,DAY	;
-		ADD DX,AXX	;DL = AL = SI * 10
+		ADD DX,AXX	;DX =+ SI * 10
 		INT 21H		;
 		MOV DAYPH[SI], DH;SAVE POINTER FOR LATER
 		MOV DAYPL[SI], DL;SAVE POINTER FOR LATER
@@ -192,15 +190,12 @@ MENU1 PROC
 		MUL HOUR_RATE
 		MOV RESULTB[SI], AL
 		
-		MOV CX,CXX	;CX = CXX	;RE-WRITE LOOP COUNTER
 		INC SI		;
 	LOOP INPUTM1
 	
 	MOV CX,7	;7 DAYS A WEEK	
 	MOV SI,0
 	REPORTM1:	;PRINTING REPORT
-		MOV CXX,CX	;CXX = CX	;SAVE LOOP COUNTER FOR LATER
-
 					;STRING
 		MOV AH,09H	;
 		LEA DX,NEWL	;NEW LINE
@@ -233,9 +228,8 @@ MENU1 PROC
 		LEA DX,SPACE		;SPACE
 		INT 21H
 		
-		CALL DISPLAYDB		;Multiplied value
+		CALL DISPLAYDB		;Display Multiplied value
 		
-		MOV CX,CXX	;CX = CXX	;RE-WRITE LOOP COUNTER
 		INC SI		;
 	LOOP REPORTM1
 	
