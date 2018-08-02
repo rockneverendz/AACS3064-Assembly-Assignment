@@ -7,9 +7,9 @@
 	LGIN DB 0DH,0AH,"   ENTER PASSWORD : $"
 	LGIN_ERROR DB 0DH,0AH,"                    INVALID LOGIN, PLEASE TRY AGAIN.$"
 	
-	WLC1 DB 0DH,0AH,"   ",201,37 DUP (205),187,"$"
-	WLC2 DB 0DH,0AH,"   ",186,"  Welcome to New Zealand Apple Farm  ",186,"$"
-	WLC3 DB 0DH,0AH,"   ",200,37 DUP (205),188,"$"
+	WLC1 DB 0DH,0AH,"     ",201,37 DUP (205),187,"$"
+	WLC2 DB 0DH,0AH,"     ",186,"  Welcome to New Zealand Apple Farm  ",186,"$"
+	WLC3 DB 0DH,0AH,"     ",200,37 DUP (205),188,"$"
 	
 	MEN1 	 DB 0DH,0AH,"  ",218,196,194,39 DUP (196)                             ,191,"$"
 	MEN2 	 DB 0DH,0AH,"  ",179," ",179,"Select a report                        ",179,"$"
@@ -18,7 +18,7 @@
 	MEN5 	 DB 0DH,0AH,"  ",179,"2",179,"Employee's Weekly Task                 ",179,"$"
 	MEN6	 DB 0DH,0AH,"  ",179,"3",179,"Employee's Weekly Salary               ",179,"$"
 	MEN7	 DB 0DH,0AH,"  ",179,"0",179,"Exit                                   ",179,"$"
-	MEN8	 DB 0DH,0AH,"  ",192,196,193,39 DUP (196)                             ,190,"$"
+	MEN8	 DB 0DH,0AH,"  ",192,196,193,39 DUP (196)                             ,217,"$"
 	MEN9	 DB 0DH,0AH,0DH,0AH,"   Enter selection : $"
 	MENU_ERROR DB 0DH,0AH,"                     INVALID SELECTION.$"
 	
@@ -26,14 +26,12 @@
 	INPUT_ERROR DB 0DH,0AH,"                                    INVALID INPUT$"
 	
 	MENU1IN DB 0DH,0AH,"   Enter hour worked on $"
-	MENU1RE1 DB 0DH,0AH,"  ",218,10 DUP (196),194,9 DUP (196),194,9 DUP (196),194,10 DUP (196),191,"$"
+	MENU1RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,9 DUP (196),194,9 DUP (196),194,10 DUP (196),180,"$"
 	MENU1RE2 DB 0DH,0AH,"  ",179," Day      ",179," Hours   ",179,"Hour Rate",179,"Total Pay ",179,"$"
 	MENU1RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,9 DUP (196),197,9 DUP (196),197,10 DUP (196),180,"$"
 	MENU1RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,9 DUP (205),216,9 DUP (205),216,10 DUP (205),181,"$"
 	MENU1RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"         ",179,"         ",179,"          ",179,"$"
 	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,9 DUP (205),207,9 DUP (205),207,10 DUP (205),190,"$"
-	
-	
 	
 	MENU2RE1 DB 0DH,0AH,"  ",218,10 DUP (196),194,9 DUP (196),194,9 DUP (196),194,10 DUP (196),191,"$"
 	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Hours   ",179,"Hour Rate",179,"Total Pay ",179,"$"
@@ -242,6 +240,10 @@ MENU1 PROC
 	LOOP INPUTM1
 	
 	MOV AH, 09H
+	LEA DX, MEN1 ;	============================
+	INT 21H		;
+	LEA DX, MEN4 ;	"1. Employee's Weekly Hours"
+	INT 21H		;
 	LEA DX, MENU1RE1
 	INT 21H
 	LEA DX, MENU1RE2
