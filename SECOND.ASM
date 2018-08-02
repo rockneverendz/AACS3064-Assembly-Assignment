@@ -11,12 +11,15 @@
 	WLC2 DB 0DH,0AH,"   ",186,"  Welcome to New Zealand Apple Farm  ",186,"$"
 	WLC3 DB 0DH,0AH,"   ",200,37 DUP (205),188,"$"
 	
-	MENU DB 0DH,0AH,"   Select a report$"
-	MEN1 DB 0DH,0AH,"1. Employee's Weekly Hours$"
-	MEN2 DB 0DH,0AH,"2. Employee's Weekly Task$"
-	MEN3 DB 0DH,0AH,"3. Employee's Weekly Salary$"
-	MEN0 DB 0DH,0AH,"0. Exit$"
-	MENI DB 0DH,0AH,0DH,0AH,"   Enter selection : $"
+	MEN1 	 DB 0DH,0AH,"  ",218,196,194,39 DUP (196)                             ,191,"$"
+	MEN2 	 DB 0DH,0AH,"  ",179," ",179,"Select a report                        ",179,"$"
+	MEN3 	 DB 0DH,0AH,"  ",195,196,197,39 DUP (196)                             ,180,"$"
+	MEN4 	 DB 0DH,0AH,"  ",179,"1",179,"Employee's Weekly Hours                ",179,"$"
+	MEN5 	 DB 0DH,0AH,"  ",179,"2",179,"Employee's Weekly Task                 ",179,"$"
+	MEN6	 DB 0DH,0AH,"  ",179,"3",179,"Employee's Weekly Salary               ",179,"$"
+	MEN7	 DB 0DH,0AH,"  ",179,"0",179,"Exit                                   ",179,"$"
+	MEN8	 DB 0DH,0AH,"  ",192,196,193,39 DUP (196)                             ,190,"$"
+	MEN9	 DB 0DH,0AH,0DH,0AH,"   Enter selection : $"
 	MENU_ERROR DB 0DH,0AH,"                     INVALID SELECTION.$"
 	
 	CONT DB 0DH,0AH,"   Continue? (Y/N) : $"
@@ -29,6 +32,15 @@
 	MENU1RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,9 DUP (205),216,9 DUP (205),216,10 DUP (205),181,"$"
 	MENU1RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"         ",179,"         ",179,"          ",179,"$"
 	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,9 DUP (205),207,9 DUP (205),207,10 DUP (205),190,"$"
+	
+	
+	
+	MENU2RE1 DB 0DH,0AH,"  ",218,10 DUP (196),194,9 DUP (196),194,9 DUP (196),194,10 DUP (196),191,"$"
+	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Hours   ",179,"Hour Rate",179,"Total Pay ",179,"$"
+	MENU2RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,9 DUP (196),197,9 DUP (196),197,10 DUP (196),180,"$"
+	MENU2RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,9 DUP (205),216,9 DUP (205),216,10 DUP (205),181,"$"
+	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"         ",179,"         ",179,"          ",179,"$"
+	MENU2RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,9 DUP (205),207,9 DUP (205),207,10 DUP (205),190,"$"
 	
 	;┌─┬┐	;218	;196	;194	;191		
 	;│ ││	;179			;179	;179
@@ -170,7 +182,11 @@ LOGIN ENDP
 
 MENU1 PROC
 	MOV AH,09H	;
-	LEA DX,MEN1 ;	"1. Employee's Weekly Hours"
+	LEA DX,MEN1 ;	============================
+	INT 21H		;
+	LEA DX,MEN4 ;	"1. Employee's Weekly Hours"
+	INT 21H		;
+	LEA DX,MEN8 ;	============================
 	INT 21H		;
 	LEA DX,NEWL	;
 	INT 21H		;
@@ -315,19 +331,160 @@ MENU1 ENDP
 
 MENU2 PROC
 	MOV AH,09H	;
-	LEA DX,MEN2 ;	"2. Employee's Weekly Task$"
+	LEA DX,MEN1 ;	============================
+	INT 21H		;
+	LEA DX,MEN5 ;	"1. Employee's Weekly Hours"
+	INT 21H		;
+	LEA DX,MEN8 ;	============================
 	INT 21H		;
 	LEA DX,NEWL	;
 	INT 21H		;
+	MOV TTL_BIN_VALUE, 0 ;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
 	
-	CALL DISPLAYDW
+	; MOV CX,7	;7 DAYS A WEEK
+	; MOV SI,0
+	; INPUTM1:
+					; ;STRING
+		; MOV AH,09H	;
+		; LEA DX,MENU1IN	;
+		; INT 21H		;
+		
+		; MOV AX,SI	;Multiply 10 as each DAY strings are 10 char in length.
+		; MUL TENB	;Multiply with the SI index value and add with DAY address
+		; MOV AXX, AX	;(01/08) cannot rely on AL as the carry WILL NOT carry over to AH
+		
+		; MOV AH,09H	;and we'll get the next DAY location.
+		; LEA DX,DAY	;
+		; ADD DX,AXX	;DX =+ SI * 10
+		; INT 21H		;
+		; MOV DAYPH[SI], DH;SAVE POINTER FOR LATER
+		; MOV DAYPL[SI], DL;SAVE POINTER FOR LATER
+					; ;
+		; LEA DX, COLON;DISPLAY COLON
+		; INT 21H
+		
+		; MOV AH,01H	;INPUT SINGLE CHARACTER
+		; INT 21H		;
+		; SUB AL, 48	;
+		; CMP AL, 0	;
+		; JL  INPUTM1_INVALID ;INPUT < 0
+		; CMP AL, 9	;
+		; JG  INPUTM1_INVALID	;INPUT > 9
+		; JMP INPUTM1_VALID	;0 <= INPUT <= 9
+		
+		; INPUTM1_INVALID:
+		; MOV AH,09H	;
+		; LEA DX,INPUT_ERROR	;
+		; INT 21H		;
+		; JMP INPUTM1	;
+		
+		; INPUTM1_VALID:
+		; MOV VALUE[SI], AL	;STORE IN 'HOURS' 
+		; ADD TTL_HOUR , AL	;SUM OF 'HOURS'
+		
+		; MOV AH, 0
+		; MUL HOUR_RATE
+		; MOV RESULTB[SI] , AL;STORE IN 'TOTAL PAY'
+		; ADD TTL_HOUR_PAY, AX;SUM OF 'TOTAL PAY'
+		
+		; INC SI		;
+	; LOOP INPUTM1
+	
+	; MOV AH, 09H
+	; LEA DX, MENU1RE1
+	; INT 21H
+	; LEA DX, MENU1RE2
+	; INT 21H
+	; LEA DX, MENU1RE3
+	; INT 21H
+	
+	; MOV CX,7	;7 DAYS A WEEK	
+	; MOV SI,0
+	; REPORTM1:	;PRINTING REPORT
+					; ;STRING
+		; MOV AH,09H	;
+		; LEA DX,NEWL	;NEW LINE
+		; INT 21H		;
+		; LEA DX,INDENT;INDENT
+		; INT 21H
+		; MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+		; MOV DL,DAYPL[SI]	;THIS INGENUITY IS MADE POSSIBLE BY VERNIY xD	
+		; INT 21H			
+		
+		; MOV AH,09H
+		; LEA DX,SPACE		;SPACE
+		; INT 21H
+		
+		; MOV AH,02H
+		; MOV DL,VALUE[SI]	;Entered Value
+		; ADD DL,48
+		; INT 21H
+		
+		; MOV AH,09H
+		; LEA DX,SPACE		;SPACE
+		; INT 21H
+		
+		; MOV AH,02H
+		; MOV DL,HOUR_RATE	;Constant Hourly Rate
+		; ADD DL,48
+		; INT 21H
+		
+		; MOV AH,09H
+		; LEA DX,SPACE		;SPACE
+		; INT 21H
+		
+		; CALL DISPLAYDB		;Display Multiplied value
+		
+		; MOV AH,09H
+		; LEA DX,SPACE		;SPACE
+		; INT 21H
+		
+		; INC SI		;
+	; LOOP REPORTM1
+	
+	; LEA DX, MENU1RE4
+	; INT 21H
+	
+	; MOV AH,	0
+	; MOV AL, TTL_HOUR	;AL = 23
+
+	; DIV TENB			;AL = 2		;AH = 3
+	; ADD AL, 48
+	; ADD AH, 48
+	; MOV SI, 22
+	; MOV MENU1RE5[SI]  , AL	;
+	; MOV MENU1RE5[SI+1], AH	;
+
+	; MOV DX, 0			;DX = 0
+	; MOV AX, TTL_HOUR_PAY;AX = 345
+
+	; DIV TENW			;AX = 34	;DX = 5
+	; DIV TENB			;AL = 3		;AH = 4
+	; ADD AL, 48			;FROM INT TO CHAR
+	; ADD AH, 48			;FROM INT TO CHAR
+	; ADD DL, 48			;FROM INT TO CHAR
+	; MOV SI, 42			;MOVE TO INDEX OF TTL_HOUR_PAY
+	; MOV MENU1RE5[SI]  , AL	;
+	; MOV MENU1RE5[SI+1], AH	;
+	; MOV MENU1RE5[SI+2], DL
+	
+	; MOV AH,09H
+	; LEA DX, MENU1RE5
+	; INT 21H
+	
+	; LEA DX, MENU1RE6
+	; INT 21H
 	
 	RET
 MENU2 ENDP
 
 MENU3 PROC
 	MOV AH,09H	;
-	LEA DX,MEN3 ;	"3. Employee's Weekly Salary$"
+	LEA DX,MEN1 ;	============================
+	INT 21H		;
+	LEA DX,MEN6 ;	"3. Employee's Weekly Salary$"
+	INT 21H		;
+	LEA DX,MEN8 ;	============================
 	INT 21H		;
 	LEA DX,NEWL	;
 	INT 21H		;
@@ -392,17 +549,23 @@ DISPLAYDW ENDP
 DISPLAYMENU PROC
 	;MENU
 	MOV AH,09H	;
-	LEA DX,MENU ;	"Select a report"
+	LEA DX,MEN1 ;
 	INT 21H		;
-	LEA DX,MEN1 ;	"1. Employee's Weekly Hours"
+	LEA DX,MEN2 ;
 	INT 21H		;
-	LEA DX,MEN2 ;	"2. Employee's Weekly Task"
+	LEA DX,MEN3 ;
 	INT 21H		;
-	LEA DX,MEN3 ;	"3. Employee's Weekly Salary"
+	LEA DX,MEN4 ;
 	INT 21H		;
-	LEA DX,MEN0 ;	"0. Exit"
+	LEA DX,MEN5 ;
 	INT 21H		;
-	LEA DX,MENI	;	"   Enter selection : $"
+	LEA DX,MEN6 ;
+	INT 21H		;
+	LEA DX,MEN7 ;
+	INT 21H		;
+	LEA DX,MEN8 ;
+	INT 21H		;
+	LEA DX,MEN9 ;
 	INT 21H		;
 	RET
 DISPLAYMENU ENDP
