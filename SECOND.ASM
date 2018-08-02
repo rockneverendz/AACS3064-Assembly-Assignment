@@ -10,17 +10,15 @@
 	WLC1 DB 0DH,0AH,"          ",201,37 DUP (205),187,"$"
 	WLC2 DB 0DH,0AH,"          ",186,"  Welcome to New Zealand Apple Farm  ",186,"$"
 	WLC3 DB 0DH,0AH,"          ",200,37 DUP (205),188,"$"
-						;LENGTH OF BOX FOR REFERENCE
-						;---------------------------------------------
-						;Wednesday |                 |    |    |     |
-	MEN1 	 DB 0DH,0AH,"  ",218,196,194,52 DUP (196)                                         ,191,"$"
-	MEN2 	 DB 0DH,0AH,"  ",179," ",179,"Select a report                                     ",179,"$"
-	MEN3 	 DB 0DH,0AH,"  ",195,196,197,52 DUP (196)                                         ,180,"$"
-	MEN4 	 DB 0DH,0AH,"  ",179,"1",179,"Employee's Weekly Hours                             ",179,"$"
-	MEN5 	 DB 0DH,0AH,"  ",179,"2",179,"Employee's Weekly Task                              ",179,"$"
-	MEN6	 DB 0DH,0AH,"  ",179,"3",179,"Employee's Weekly Salary                            ",179,"$"
-	MEN7	 DB 0DH,0AH,"  ",179,"0",179,"Exit                                                ",179,"$"
-	MEN8	 DB 0DH,0AH,"  ",192,196,193,52 DUP (196)                                         ,217,"$"
+	
+	MEN1 	 DB 0DH,0AH,"  ",218,196,194,52 DUP (196)                                          ,191,"$"
+	MEN2 	 DB 0DH,0AH,"  ",179," ",179," Select a report                                    ",179,"$"
+	MEN3 	 DB 0DH,0AH,"  ",195,196,197,52 DUP (196)                                          ,180,"$"
+	MEN4 	 DB 0DH,0AH,"  ",179,"1",179," Employee's Weekly Hours                            ",179,"$"
+	MEN5 	 DB 0DH,0AH,"  ",179,"2",179," Employee's Weekly Task                             ",179,"$"
+	MEN6	 DB 0DH,0AH,"  ",179,"3",179," Employee's Weekly Salary                           ",179,"$"
+	MEN7	 DB 0DH,0AH,"  ",179,"0",179," Exit                                               ",179,"$"
+	MEN8	 DB 0DH,0AH,"  ",192,196,193,52 DUP (196)                                          ,217,"$"
 	MEN9	 DB 0DH,0AH,0DH,0AH,"   Enter selection : $"
 	MENU_ERROR DB 0DH,0AH,"                     INVALID SELECTION.$"
 	
@@ -37,8 +35,7 @@
 	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,10 DUP (205),207,11 DUP (205),207,20 DUP (205)          ,190,"$"
 	
 	MENU2IN1 DB 0DH,0AH,"   Select apple picked on $"
-	MENU2IN2 DB 0DH,0AH,"   Enter selection                            $"
-	MENU2IN3 DB 0DH,0AH,"   Enter the number of bins of $"
+	MENU2IN2 DB 0DH,0AH,"   Enter the number of bins of $"
 	MENU2RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,15 DUP (196),194,5 DUP (196),194,10 DUP (196),194,10 DUP (196),180,"$"
 	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Apple Picked  ",179," Bin "    ,179," Bin Rate ",179," Bin Value",179,"$"
 	MENU2RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,15 DUP (196)     ,197,5 DUP (196),197,10 DUP (196),197,10 DUP (196),180,"$"
@@ -49,6 +46,14 @@
 	
 	
 	INDENT	 DB 0DH,0AH,"  ",179,"$"
+	INDENTX	 DB 0DH,0AH,"  ",179,"0",179," ","$"	;Same with INDENT but with indeX, get it? xD (Only used in DISPLAYAPPLE)
+
+	APPLE1 	 DB 0DH,0AH,"  ",218,196,194,26 DUP (196)                ,194,25 DUP (196)               ,191,"$"
+	APPLE2 	 DB 0DH,0AH,"  ",179," ",179," Apple Types              ",179," Value Per Bin           ",179,"$"
+	APPLE3 	 DB 0DH,0AH,"  ",195,196,197,26 DUP (196)                ,197,25 DUP (196)               ,180,"$"
+	APPLEX	 DB                                         "           ",179,"                         ",179,"$"
+	APPLE4	 DB 0DH,0AH,"  ",192,196,193,26 DUP (196)                ,193,25 DUP (196)               ,217,"$"
+	
 	;┌─┬┐	;218	;196	;194	;191		
 	;│ ││	;179			;179	;179
 	;├─┼┤	;195	;196	;197	;180
@@ -63,7 +68,7 @@
 		DB "Saturday $"
 		DB "Sunday   $"
 	DAYPH	DB 7 DUP(?)	;DAY POINTER HIGH	;I would use 'DW' if index isn't increment of 2
-	DAYPL	DB 7 DUP(?)	;DAY POINTER LOW
+	DAYPL	DB 7 DUP(?)	;DAY POINTER LOW	;Basically for easier indexing, you know?
 			
 	APPLE	DB "Braeburn      $" ;Array of strings of Apples
 			DB "Fuji          $" ;15 CHARACTER
@@ -73,6 +78,9 @@
 			DB "NZ Queen      $"
 			DB "Red Delicious $" 
 			DB "Royal Gala    $"
+	APPLEPH	DB 8 DUP(?)	;APPLE POINTER HIGH	;Same thing as DAY PONTER you see above
+	APPLEPL	DB 8 DUP(?)	;APPLE POINTER LOW
+			
 	APPLE_RATE	DB 172
 				DB 228
 				DB 144
@@ -82,15 +90,9 @@
 				DB 124
 				DB 108
 	
-	;VALUE DB 7 DUP(0)	;actual command
+	VALUE1  DB 7 DUP(0)
+	VALUE2  DB 7 DUP(0)
 	
-	VALUE	DB 0		;for debugging use only
-			DB 1 
-			DB 2 
-			DB 3 
-			DB 4 
-			DB 5 
-			DB 6 
 	RESULTB	DB ?
 			DB ?
 			DB ?
@@ -115,6 +117,7 @@
 	TENB 	DB 10
 	TENW 	DW 10
 	TWO 	DB 2
+	FIFTHTN DB 15
 	
 	PASSWRD DB "password$"
 	PASS_IN	DB 9 DUP (?)
@@ -177,7 +180,7 @@ LOGIN PROC
 ;	INT 21H				;  //  //  //  //  /
 ;	LEA DX, PASS_IN		;Debug purposes only	;DISPLAY ENTERED PASSWORD
 ;	INT 21H				;//  //  //  //  // 
-;	LEA DX, NEWL		;Debug purposes only
+;	LEA DX, NEWL		;Debug purposes only	
 ;	INT 21H				;  //  //  //  //  /
 ;	LEA DX, PASSWRD		;Debug purposes only	;DISPLAY VALID PASSWORD
 ;	INT 21H				;//  //  //  //  // 
@@ -186,6 +189,36 @@ LOGIN PROC
 	RETURN:
 	RET
 LOGIN ENDP
+
+POINTER PROC	;THIS INGENUITY IS MADE POSSIBLE BY VERNIY xD
+	MOV CX,7	;7 DAYS A WEEK
+	MOV SI,0
+	DAYCP:		;Stands for 'Day Create Pointer' loop
+		MOV AX,SI	;Multiply 10 as each DAY strings are 10 char in length.
+		MUL TENB	;Multiply with the SI index value and add with DAY address
+		
+		LEA DX,DAY	;and we'll get the next DAY location
+		ADD DX,AX	;DX =+ SI * 10
+		MOV DAYPH[SI], DH;SAVE POINTER FOR LATER
+		MOV DAYPL[SI], DL;SAVE POINTER FOR LATER
+		
+		INC SI
+	LOOP DAYCP
+	MOV CX,8	;8 APPLE IN THE LIST
+	MOV SI,0
+	APPLECP:	;Stands for 'Apple Create Pointer' loop
+		MOV AX,SI	;Multiply 15 as each APPLE strings are 15 char in length.
+		MUL FIFTHTN	;Multiply with the SI index value and add with APPLE address
+		
+		LEA DX,APPLE;and we'll get the next APPLE location
+		ADD DX,AX	;DX =+ SI * 15
+		MOV APPLEPH[SI], DH;SAVE POINTER FOR LATER
+		MOV APPLEPL[SI], DL;SAVE POINTER FOR LATER
+		
+		INC SI
+	LOOP APPLECP
+	RET
+POINTER ENDP
 
 MENU1 PROC
 	MOV AH,09H	;
@@ -207,16 +240,9 @@ MENU1 PROC
 		LEA DX,MENU1IN	;
 		INT 21H		;
 		
-		MOV AX,SI	;Multiply 10 as each DAY strings are 10 char in length.
-		MUL TENB	;Multiply with the SI index value and add with DAY address
-		MOV AXX, AX	;(01/08) cannot rely on AL as the carry WILL NOT carry over to AH
-		
-		MOV AH,09H	;and we'll get the next DAY location.
-		LEA DX,DAY	;
-		ADD DX,AXX	;DX =+ SI * 10
-		INT 21H		;
-		MOV DAYPH[SI], DH;SAVE POINTER FOR LATER
-		MOV DAYPL[SI], DL;SAVE POINTER FOR LATER
+		MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+		MOV DL,DAYPL[SI]	
+		INT 21H	
 					;
 		LEA DX, COLON;DISPLAY COLON
 		INT 21H
@@ -237,7 +263,7 @@ MENU1 PROC
 		JMP INPUTM1	;
 		
 		INPUTM1_VALID:
-		MOV VALUE[SI], AL	;STORE IN 'HOURS' 
+		MOV VALUE1[SI], AL	;STORE IN 'HOURS' 
 		ADD TTL_HOUR , AL	;SUM OF 'HOURS'
 		
 		MOV AH, 0
@@ -273,10 +299,10 @@ MENU1 PROC
 		LEA DX,INDENT;INDENT
 		INT 21H
 		MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
-		MOV DL,DAYPL[SI]	;THIS INGENUITY IS MADE POSSIBLE BY VERNIY xD	
+		MOV DL,DAYPL[SI]
 		INT 21H	
 		
-		MOV AL,VALUE[SI]
+		MOV AL,VALUE1[SI]
 		ADD AL, 48
 		MOV DI, 10			;The location of the column 'Hours'
 		MOV MENU1REX[DI], AL;
@@ -345,26 +371,113 @@ MENU2 PROC
 	INT 21H		;
 	MOV TTL_BIN_VALUE, 0 ;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
 	
-	;CODE HERE LOL
+	MOV CX,7	;7 DAYS A WEEK
+	MOV SI,0
+	INPUTM2:
+		INPUTM2_PART1:
+			CALL DISPLAYAPPLE
+								;STRING
+			MOV AH,09H			;
+			LEA DX,MENU2IN1		;
+			INT 21H				;
+			MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+			MOV DL,DAYPL[SI]
+			INT 21H	
+			
+			LEA DX, COLON;DISPLAY COLON
+			INT 21H
+			
+			MOV AH,01H	;INPUT SINGLE CHARACTER
+			INT 21H		;
+			SUB AL, 48	;
+			CMP AL, 0	;
+			JL  INPUTM2_INVALID_PART1	;INPUT < 0
+			CMP AL, 8	;
+			JG  INPUTM2_INVALID_PART1	;INPUT > 8
+			JMP INPUTM2_VALID_PART1 	;0 <= INPUT <= 8
+			
+			INPUTM2_INVALID_PART1:
+			MOV AH,09H			;
+			LEA DX,INPUT_ERROR	;
+			INT 21H				;
+		JMP INPUTM2_PART1	;
+		
+			INPUTM2_VALID_PART1:
+		MOV VALUE2[SI], AL	;STORE IN 'APPLE TYPE' 
+		
+		INPUTM2_PART2:			;STRING
+			MOV AH,09H			;
+			LEA DX,MENU2IN2		;
+			INT 21H				;
+			MOV DH,APPLEPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+			MOV DL,APPLEPL[SI]
+			INT 21H	
+			
+			LEA DX, COLON;DISPLAY COLON
+			INT 21H
+			
+			MOV AH,01H	;INPUT SINGLE CHARACTER
+			INT 21H		;
+			SUB AL, 48	;
+			CMP AL, 0	;
+			JL  INPUTM2_INVALID_PART2	;INPUT < 0
+			CMP AL, 9	;
+			JG  INPUTM2_INVALID_PART2	;INPUT > 9
+			JMP INPUTM2_VALID_PART2		;0 <= INPUT <= 9
+			
+			INPUTM2_INVALID_PART2:
+			MOV AH,09H			;
+			LEA DX,INPUT_ERROR	;
+			INT 21H				;
+		JMP INPUTM2_PART2	;
+		
+			INPUTM2_VALID_PART2:
+		MOV VALUE2[SI], AL	;STORE IN 'APPLE TYPE' 
+		
+		
+		; MOV AH, 0
+		; MUL HOUR_RATE
+		; MOV RESULTB[SI] , AL;STORE IN 'TOTAL PAY'
+		; ADD TTL_BIN_VALUE, AX;SUM OF 'TOTAL BIN VALUE'
+		
+		INC SI		;
+	LOOP INPUTM2
 	
-	LEA DX, MENU2RE1
-	INT 21H     
-	LEA DX, MENU2RE2
-	INT 21H     
-	LEA DX, MENU2RE3
-	INT 21H     
-	LEA DX, INDENT
-	INT 21H
-	MOV SI , 0
-	MOV DH ,DAYPH[SI] 
-	MOV DL ,DAYPL[SI]
-	INT 21H
-	LEA DX, MENU2REX
-	INT 21H     
+	MOV AH, 09H
+	LEA DX, MEN1 	;	============================
+	INT 21H			;
+	LEA DX, MEN5 	;	"1. Employee's Weekly Hours"
+	INT 21H			;
+	LEA DX, MENU2RE1;	============================
+	INT 21H			;
+	LEA DX, MENU2RE2;	DAY | HOURS | HOURRATE | PAY
+	INT 21H			;
+	LEA DX, MENU2RE3;	============================
+	INT 21H			;
+		
+	MOV CX,7	;7 DAYS A WEEK	
+	MOV SI,0
+	REPORTM2:	;PRINTING REPORT
+					;STRING
+		MOV AH,09H	;
+		LEA DX,INDENT;INDENT
+		INT 21H
+		MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+		MOV DL,DAYPL[SI]
+		INT 21H	
+		
+		LEA DX,MENU2REX
+		INT 21H
+		
+		INC SI		;
+	LOOP REPORTM2
+	
 	LEA DX, MENU2RE4
-	INT 21H     
+	INT 21H
+	
 	LEA DX, MENU2RE5
-	INT 21H     
+	INT 21H
+	
 	LEA DX, MENU2RE6
 	INT 21H
 	
@@ -463,6 +576,58 @@ DISPLAYMENU PROC
 	RET
 DISPLAYMENU ENDP
 
+DISPLAYAPPLE PROC
+	MOV CXX, CX;
+	MOV SII, SI;
+	
+	MOV AH, 09H
+	LEA DX, APPLE1
+	INT 21H
+	LEA DX, APPLE2
+	INT 21H
+	LEA DX, APPLE3
+	INT 21H
+	
+	MOV	INDENTX[5], "0" ;Initializing to 0, we will add this character value by one increment each loop
+	MOV DI, 13			;Location of Value Per Bin
+	MOV CX, 8			;8 APPLES IN THE LIST
+	MOV SI, 0
+	APPLELIST:
+		INC	INDENTX[5]
+		LEA DX, INDENTX
+		INT 21H
+		MOV DH, APPLEPH[SI]
+		MOV DL, APPLEPL[SI]
+		INT 21H
+		
+		MOV AH, 0
+		MOV AL, APPLE_RATE[SI]		;AL = 234	;AH = 0
+		DIV TENB					;AL = 23	;AH = 4
+		ADD AH, 48
+		MOV APPLEX[DI+2], AH		;
+		
+		MOV AH, 0					;AL = 23	;AH = 0
+		DIV TENB					;AL = 2		;AH = 3
+		ADD AH, 48
+		ADD AL, 48
+		MOV APPLEX[DI+1], AH		;
+		MOV APPLEX[DI]  , AL		;
+	
+		MOV AH, 09H
+		LEA DX, APPLEX
+		INT 21H
+		
+		INC SI
+	LOOP APPLELIST
+	
+	LEA DX, APPLE4
+	INT 21H
+		
+	MOV CX, CXX;
+	MOV SI, SII;
+	RET 
+DISPLAYAPPLE ENDP
+
 CONTINUE PROC
 	CLOOP:
 	MOV AH,09H	;
@@ -495,6 +660,7 @@ MAIN PROC
 	MOV DS,AX
 	;----BEGIN----
 ;	CALL LOGIN	;PROCEED WHEN LOGIN INFO IS VALID	;Just remember to reenable this procedure call when presenting
+	CALL POINTER;PREPARING POINTERS FOR EASIER NAVIGATION
 	Q:			;
 	MOV AH,09H	;
 	LEA DX,WLC1 ;   ===============
