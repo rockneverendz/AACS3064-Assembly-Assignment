@@ -39,7 +39,8 @@
 	MENU2RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,15 DUP (196),194,5 DUP (196),194,10 DUP (196),194,10 DUP (196),180,"$"
 	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Apple Picked  ",179," Bin "    ,179," Bin Rate ",179," Bin Value",179,"$"
 	MENU2RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,15 DUP (196)     ,197,5 DUP (196),197,10 DUP (196),197,10 DUP (196),180,"$"
-	MENU2REX DB                           " ",179,"               ",179,"     "    ,179,"          ",179,"          ",179,"$"
+	MENU2REX DB                                                     179,"     "    ,179,"          ",179,"          ",179,"$"
+	MENU2REN DB                                    "              ",179,"  -  "    ,179,"    --    ",179,"    --    ",179,"$"
 	MENU2RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,15 DUP (205)     ,216,5 DUP (205),216,10 DUP (205),216,10 DUP (205),181,"$"
 	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"               ",179,"     "    ,179,"          ",179,"          ",179,"$"
 	MENU2RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,15 DUP (205)     ,207,5 DUP (205),207,10 DUP (205),207,10 DUP (205),190,"$"
@@ -78,17 +79,20 @@
 			DB "NZ Queen      $"
 			DB "Red Delicious $" 
 			DB "Royal Gala    $"
+	APPLE0	DB "NONE          $"
 	APPLEPH	DB 8 DUP(?)	;APPLE POINTER HIGH	;Same thing as DAY PONTER you see above
 	APPLEPL	DB 8 DUP(?)	;APPLE POINTER LOW
-			
-	APPLE_RATE	DB 172
-				DB 228
-				DB 144
-				DB 128
-				DB 112
-				DB 114
-				DB 124
-				DB 108
+				
+	APPLE_RATE	DW 17212	;Means RM 172.12 
+				DW 22823
+				DW 14445
+				DW 12856
+				DW 11267
+				DW 11478
+				DW 12489
+				DW 10890
+	APPLE_RATEPH DB 8 DUP(?)	;APPLE RATE POINTER HIGH
+	APPLE_RATEPL DB 8 DUP(?)	;APPLE RATE POINTER LOW
 	
 	VALUE1  DB 7 DUP(0)
 	VALUE2  DB 7 DUP(0)
@@ -114,10 +118,14 @@
 
 	SPACE	DB " ",179,"       $"
 	COLON	DB " : $"
-	TENB 	DB 10
-	TENW 	DW 10
+	LINE	DB " ",179," $"
 	TWO 	DB 2
 	FIFTHTN DB 15
+	TENTHOU DW 10000
+	ONETHOU DW  1000
+	HUNDRED DW   100
+	TENB 	DB 	  10
+	TENW 	DW    10
 	
 	PASSWRD DB "password$"
 	PASS_IN	DB 9 DUP (?)
@@ -191,32 +199,33 @@ LOGIN PROC
 LOGIN ENDP
 
 POINTER PROC	;THIS INGENUITY IS MADE POSSIBLE BY VERNIY xD
+	MOV DX, OFFSET DAY
 	MOV CX,7	;7 DAYS A WEEK
 	MOV SI,0
 	DAYCP:		;Stands for 'Day Create Pointer' loop
-		MOV AX,SI	;Multiply 10 as each DAY strings are 10 char in length.
-		MUL TENB	;Multiply with the SI index value and add with DAY address
-		
-		LEA DX,DAY	;and we'll get the next DAY location
-		ADD DX,AX	;DX =+ SI * 10
 		MOV DAYPH[SI], DH;SAVE POINTER FOR LATER
 		MOV DAYPL[SI], DL;SAVE POINTER FOR LATER
 		
+		ADD DX, 10	;Since each string length is 10, add 10 and we will find the next address of the next day
 		INC SI
 	LOOP DAYCP
+	
+	MOV AX, OFFSET APPLE
+	MOV BX, OFFSET APPLE_RATE
 	MOV CX,8	;8 APPLE IN THE LIST
 	MOV SI,0
 	APPLECP:	;Stands for 'Apple Create Pointer' loop
-		MOV AX,SI	;Multiply 15 as each APPLE strings are 15 char in length.
-		MUL FIFTHTN	;Multiply with the SI index value and add with APPLE address
+		MOV APPLEPH[SI], AH			;SAVE POINTER FOR LATER
+		MOV APPLEPL[SI], AL			;This is for the apple's name pointer
 		
-		LEA DX,APPLE;and we'll get the next APPLE location
-		ADD DX,AX	;DX =+ SI * 15
-		MOV APPLEPH[SI], DH;SAVE POINTER FOR LATER
-		MOV APPLEPL[SI], DL;SAVE POINTER FOR LATER
+		MOV APPLE_RATEPH[SI], BH	;This is for the apple's bin value pointer
+		MOV APPLE_RATEPL[SI], BL	;Really, I created pointers so I could use them in increments of ONE
 		
+		ADD AX, 15	;Apple's name string are 15 in length
+		ADD BX, 2	;
 		INC SI
 	LOOP APPLECP
+	
 	RET
 POINTER ENDP
 
@@ -390,10 +399,11 @@ MENU2 PROC
 			MOV AH,01H	;INPUT SINGLE CHARACTER
 			INT 21H		;
 			SUB AL, 48	;
-			CMP AL, 0	;
-			JL  INPUTM2_INVALID_PART1	;INPUT < 0
 			CMP AL, 8	;
 			JG  INPUTM2_INVALID_PART1	;INPUT > 8
+			CMP AL, 0	;
+			JL  INPUTM2_INVALID_PART1	;INPUT < 0
+			JE  INPUTM2_NONE
 			JMP INPUTM2_VALID_PART1 	;0 <= INPUT <= 8
 			
 			INPUTM2_INVALID_PART1:
@@ -403,14 +413,17 @@ MENU2 PROC
 		JMP INPUTM2_PART1	;
 		
 			INPUTM2_VALID_PART1:
-		MOV VALUE2[SI], AL	;STORE IN 'APPLE TYPE' 
+		SUB AL, 1	 ;User Input - 1 = Index of Apple
+		MOV VALUE1[SI], AL	;STORE IN 'APPLE TYPE' 
+		MOV AH, 0
+		MOV DI, AX
 		
 		INPUTM2_PART2:			;STRING
 			MOV AH,09H			;
 			LEA DX,MENU2IN2		;
 			INT 21H				;
-			MOV DH,APPLEPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
-			MOV DL,APPLEPL[SI]
+			MOV DH,APPLEPH[DI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+			MOV DL,APPLEPL[DI]
 			INT 21H	
 			
 			LEA DX, COLON;DISPLAY COLON
@@ -419,8 +432,8 @@ MENU2 PROC
 			MOV AH,01H	;INPUT SINGLE CHARACTER
 			INT 21H		;
 			SUB AL, 48	;
-			CMP AL, 0	;
-			JL  INPUTM2_INVALID_PART2	;INPUT < 0
+			CMP AL, 1	;
+			JL  INPUTM2_INVALID_PART2	;INPUT < 1
 			CMP AL, 9	;
 			JG  INPUTM2_INVALID_PART2	;INPUT > 9
 			JMP INPUTM2_VALID_PART2		;0 <= INPUT <= 9
@@ -439,14 +452,15 @@ MENU2 PROC
 		; MUL HOUR_RATE
 		; MOV RESULTB[SI] , AL;STORE IN 'TOTAL PAY'
 		; ADD TTL_BIN_VALUE, AX;SUM OF 'TOTAL BIN VALUE'
-		
+			INPUTM2_NONE:
+		MOV VALUE1[SI], 0
 		INC SI		;
 	LOOP INPUTM2
 	
 	MOV AH, 09H
 	LEA DX, MEN1 	;	============================
 	INT 21H			;
-	LEA DX, MEN5 	;	"1. Employee's Weekly Hours"
+	LEA DX, MEN5 	;	"2. Employee's Weekly Task "
 	INT 21H			;
 	LEA DX, MENU2RE1;	============================
 	INT 21H			;
@@ -459,16 +473,68 @@ MENU2 PROC
 	MOV SI,0
 	REPORTM2:	;PRINTING REPORT
 					;STRING
-		MOV AH,09H	;
-		LEA DX,INDENT;INDENT
+		MOV AH, 09H	;
+		LEA DX, INDENT;INDENT
 		INT 21H
-		MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
-		MOV DL,DAYPL[SI]
+		MOV DH, DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+		MOV DL, DAYPL[SI]
 		INT 21H	
+		
+		LEA DX, LINE		;A line
+		INT 21H
+		
+		MOV BH, 0			;The apple name which user selected
+		MOV BL, VALUE1[SI]
+		CMP BL, BH			;CHECK IF IT'S NULL
+		JL  REPORTM2_NULL
+		MOV DI, BX
+		MOV DH, APPLEPH[DI]	
+		MOV DL, APPLEPL[DI]
+		INT 21H	
+		
+		MOV BL, VALUE2[SI]
+		ADD BL, 48
+		MOV MENU2REX[4], BL
+		
+		; MOV DX, 0
+		; MOV BH, APPLE_RATEPH[DI]	
+		; MOV BL, APPLE_RATEPL[DI]	
+		; MOV AX, [BX]				;AX = 17212	;DX = 0
+		
+		; DIV TENTHOU					;AX = 1		;DX = 7212
+		; ADD AL, 48
+		; MOV MENU2REX[10], AL		
+		
+		; MOV AX, DX					;AX = 7212	;DX = 0
+		; MOV DX, 0
+		; DIV ONETHOU					;AX = 7		;DX = 212
+		; ADD AL, 48
+		; MOV MENU2REX[11], AL
+
+		; MOV AX, DX					;AX = 212	;DX = 0
+		; MOV DX, 0
+		; DIV HUNDRED					;AX = 2		;DX = 12
+		; ADD AL, 48
+		; MOV MENU2REX[12], AL
+		
+		; MOV AX, DX					;AL = 12	;AH = 0
+		; DIV TENB					;AL = 1		;AH = 2
+		; ADD AL, 48
+		; ADD AH, 48
+		; MOV MENU2REX[13], "."
+		; MOV MENU2REX[14], AL
+		; MOV MENU2REX[15], AH
+		
 		
 		LEA DX,MENU2REX
 		INT 21H
+		JMP REPORTM2_NEXT
 		
+		REPORTM2_NULL:
+		LEA DX,MENU2REN
+		INT 21H
+		
+		REPORTM2_NEXT:
 		INC SI		;
 	LOOP REPORTM2
 	
@@ -588,37 +654,66 @@ DISPLAYAPPLE PROC
 	LEA DX, APPLE3
 	INT 21H
 	
-	MOV	INDENTX[5], "0" ;Initializing to 0, we will add this character value by one increment each loop
 	MOV DI, 13			;Location of Value Per Bin
 	MOV CX, 8			;8 APPLES IN THE LIST
 	MOV SI, 0
 	APPLELIST:
-		INC	INDENTX[5]
+		INC	INDENTX[5]	;Incrementing the character '0' to '8'
 		LEA DX, INDENTX
 		INT 21H
 		MOV DH, APPLEPH[SI]
 		MOV DL, APPLEPL[SI]
 		INT 21H
 		
-		MOV AH, 0
-		MOV AL, APPLE_RATE[SI]		;AL = 234	;AH = 0
-		DIV TENB					;AL = 23	;AH = 4
-		ADD AH, 48
-		MOV APPLEX[DI+2], AH		;
+		MOV DX, 0
+		MOV BH, APPLE_RATEPH[SI]	
+		MOV BL, APPLE_RATEPL[SI]	
+		MOV AX, [BX]				;AX = 17212	;DX = 0
 		
-		MOV AH, 0					;AL = 23	;AH = 0
-		DIV TENB					;AL = 2		;AH = 3
-		ADD AH, 48
+		DIV TENTHOU					;AX = 1		;DX = 7212
 		ADD AL, 48
-		MOV APPLEX[DI+1], AH		;
-		MOV APPLEX[DI]  , AL		;
-	
+		MOV APPLEX[DI+0], AL		
+		
+		MOV AX, DX					;AX = 7212	;DX = 0
+		MOV DX, 0
+		DIV ONETHOU					;AX = 7		;DX = 212
+		ADD AL, 48
+		MOV APPLEX[DI+1], AL
+
+		MOV AX, DX					;AX = 212	;DX = 0
+		MOV DX, 0
+		DIV HUNDRED					;AX = 2		;DX = 12
+		ADD AL, 48
+		MOV APPLEX[DI+2], AL
+		
+		MOV AX, DX					;AL = 12	;AH = 0
+		DIV TENB					;AL = 1		;AH = 2
+		ADD AL, 48
+		ADD AH, 48
+		MOV APPLEX[DI+3], "."
+		MOV APPLEX[DI+4], AL
+		MOV APPLEX[DI+5], AH
+		
 		MOV AH, 09H
 		LEA DX, APPLEX
 		INT 21H
 		
 		INC SI
 	LOOP APPLELIST
+	
+	MOV	INDENTX[5], "0" ;Initializing to 0, we will add this character value by one increment each loop
+	LEA DX, INDENTX
+	INT 21H
+	LEA DX, APPLE0
+	INT 21H
+	MOV APPLEX[DI+0], " "		
+	MOV APPLEX[DI+1], " "
+	MOV APPLEX[DI+2], " "
+	MOV APPLEX[DI+3], " "
+	MOV APPLEX[DI+4], " "
+	MOV APPLEX[DI+5], " "
+	LEA DX, APPLEX
+	INT 21H
 	
 	LEA DX, APPLE4
 	INT 21H
