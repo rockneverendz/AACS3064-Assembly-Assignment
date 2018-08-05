@@ -44,7 +44,7 @@
 	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Apple Picked  ",179," Bin "    ,179," Bin Rate ",179," Bin Value",179,"$"
 	MENU2RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,15 DUP (196)     ,197,5 DUP (196),197,10 DUP (196),197,10 DUP (196),180,"$"
 	MENU2REX DB                                                     179,"     "    ,179,"          ",179,"          ",179,"$"
-	MENU2REN DB                                    "     ----     ",179,"  -  "    ,179,"    --    ",179,"    --    ",179,"$"
+	MENU2REN DB                                    "              ",179,"   - "    ,179,"    --.-- ",179,"    --.-- ",179,"$"
 	MENU2RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,15 DUP (205)     ,216,5 DUP (205),216,10 DUP (205),216,10 DUP (205),181,"$"
 	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"               ",179,"     "    ,179,"          ",179,"          ",179,"$"
 	MENU2RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,15 DUP (205)     ,207,5 DUP (205),207,10 DUP (205),207,10 DUP (205),190,"$"
@@ -514,7 +514,15 @@ MENU2_REPORT_PROC PROC
 	MOV BH, 0			;The apple name which user selected
 	MOV BL, VALUE1[SI]
 	CMP BL, BH			;CHECK IF IT'S NULL, 0 IS NOT NULL
-	JL  REPORTM2_NULL   ;-1 < 0, THUS WE CAN CONCULDE IF IT'S NULL
+	JL  MENU2_REPORT_NULL   ;-1 < 0, THUS WE CAN CONCULDE IF IT'S NULL
+	JMP MENU2_REPORT_NOT_NULL
+    
+    MENU2_REPORT_NULL:
+        LEA DX,MENU2REN
+        INT 21H
+        JMP MENU2_REPORT_NEXT
+    
+    MENU2_REPORT_NOT_NULL:
 	MOV DI, BX
 	MOV DH, APPLEPH[DI]	
 	MOV DL, APPLEPL[DI]
@@ -556,13 +564,8 @@ MENU2_REPORT_PROC PROC
 	MOV AH, 09H
 	LEA DX,MENU2REX
 	INT 21H
-	JMP REPORTM2_NEXT
 	
-	REPORTM2_NULL:
-        LEA DX,MENU2REN
-        INT 21H
-            
-	REPORTM2_NEXT:
+	MENU2_REPORT_NEXT:
         INC SI		;
     RET
 MENU2_REPORT_PROC ENDP
@@ -581,59 +584,6 @@ MENU3 PROC
 	
 	RET
 MENU3 ENDP
-
-DISPLAYDB PROC
-	MOV AH,	0
-	MOV AL, RESULTB[SI]	;AL = 23
-	
-	DIV TENB			;AL = 2		;AH = 3
-	MOV DISREST[1], AH	;
-	MOV DISREST[0], AL	;
-	
-				;1ST DIGIT
-	MOV AH,02H	;
-	MOV DL,DISREST[0]
-	ADD DL,48	;
-	INT 21H		;
-				;2ND DIGIT
-	MOV DL,DISREST[1]
-	ADD DL,48	;
-	INT 21H		;
-	
-	RET
-DISPLAYDB ENDP
-
-DISPLAYDW PROC
-	MOV SII, SI 	;SAVE FOR A LATER
-
-	MOV DX,0
-	ADD SI, SI
-	ADD SI, OFFSET RESULTW
-	MOV AX, [SI]
-	
-	DIV TENW			;AX = 23	;DX = 4
-	MOV DISREST[2], DL	;
-	DIV TENB			;AL = 2		;AH = 3
-	MOV DISREST[1], AH	;
-	MOV DISREST[0], AL	;
-	
-				;1ST DIGIT
-	MOV AH,02H	;
-	MOV DL,DISREST[0]
-	ADD DL,48	;
-	INT 21H		;
-				;2ND DIGIT
-	MOV DL,DISREST[1]
-	ADD DL,48	;
-	INT 21H		;
-				;3RD DIGIT
-	MOV DL,DISREST[2]
-	ADD DL,48	;
-	INT 21H		;
-	
-	MOV SI, SII	;RE-INSTATEING 
-	RET
-DISPLAYDW ENDP
 
 DISPLAYMENU PROC
 	;MENU
