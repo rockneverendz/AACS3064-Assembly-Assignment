@@ -291,7 +291,7 @@ MENU1 PROC
 		
 		MOV AH,01H	;INPUT SINGLE CHARACTER
 		INT 21H		;
-		SUB AL, 48	;
+		SUB AL, "0"	;
 		CMP AL, 0	;
 		JL  MENU1_INPUT_HOURS_INVALID   ;INPUT < 0
 		CMP AL, 9	;
@@ -330,7 +330,7 @@ MENU1 PROC
 	INT 21H			;
 	
 	MOV AL, HOUR_RATE	;Since this is a constant, we only are required to change this once (and never touch this again)
-	ADD AL, 48			;If owner decide to change the rates, the report will follow suit
+	ADD AL, "0"			;If owner decide to change the rates, the report will follow suit
 	MOV DI, 22			;The location of the column 'Hour Rate'
 	MOV MENU1REX[DI], AL;
 	
@@ -346,15 +346,15 @@ MENU1 PROC
 		INT 21H	
 		
 		MOV AL,HOURS_VAR[SI]
-		ADD AL, 48
+		ADD AL, "0"
 		MOV DI, 10			;The location of the column 'Hours'
 		MOV MENU1REX[DI], AL;
 		
 		MOV AH, 0
 		MOV AL, RESULTB[SI]
 		DIV TENB
-		ADD AL, 48
-		ADD AH, 48
+		ADD AL, "0"
+		ADD AH, "0"
 		MOV DI, 42			;The location of the column 'Total Pay'
 		MOV MENU1REX[DI]  , AL
 		MOV MENU1REX[DI+1], AH
@@ -373,8 +373,8 @@ MENU1 PROC
 	MOV AL, TTL_HOUR	;AL = 23
 
 	DIV TENB			;AL = 2		;AH = 3
-	ADD AL, 48
-	ADD AH, 48
+	ADD AL, "0"
+	ADD AH, "0"
 	MOV DI, 23				;The location of the column 'Hours'
 	MOV MENU1RE5[DI]  , AL	;
 	MOV MENU1RE5[DI+1], AH	;
@@ -384,9 +384,9 @@ MENU1 PROC
 
 	DIV TENW				;AX = 34	;DX = 5
 	DIV TENB				;AL = 3		;AH = 4
-	ADD AL, 48				;FROM INT TO CHAR
-	ADD AH, 48				;FROM INT TO CHAR
-	ADD DL, 48				;FROM INT TO CHAR
+	ADD AL, "0"				;FROM INT TO CHAR
+	ADD AH, "0"				;FROM INT TO CHAR
+	ADD DL, "0"				;FROM INT TO CHAR
 	MOV DI, 55				;The location of the column 'Total Pay'
 	MOV MENU1RE5[DI]  , AL	;
 	MOV MENU1RE5[DI+1], AH	;
@@ -466,7 +466,7 @@ MENU2_INPUT_PROC PROC
 		
 		MOV AH,01H	;INPUT SINGLE CHARACTER
 		INT 21H		;
-		SUB AL, 48	;
+		SUB AL, "0"	;
 		CMP AL, 8	;
 		JG  MENU2_INPUT_APPLE_INVALID	;INPUT > 8
 		CMP AL, 0	;
@@ -500,7 +500,7 @@ MENU2_INPUT_PROC PROC
 		
 		MOV AH,01H	;INPUT SINGLE CHARACTER
 		INT 21H		;
-		SUB AL, 48	;
+		SUB AL, "0"	;
 		CMP AL, 1	;
 		JL  MENU2_INPUT_BIN_INVALID	;INPUT < 1
 		CMP AL, 9	;
@@ -578,7 +578,7 @@ MENU2_REPORT_PROC PROC
 	INT 21H	
 		
 	MOV BL, BIN_VAR[SI]
-	ADD BL, 48
+	ADD BL, "0"
 	MOV MENU2REX[4], BL
 		
 	MOV DX, 0
@@ -587,25 +587,25 @@ MENU2_REPORT_PROC PROC
 	MOV AX, [BX]				;AX = 17212	;DX = 0
 		
 	DIV TENTHOU					;AX = 1		;DX = 7212
-	ADD AL, 48
+	ADD AL, "0"
 	MOV MENU2REX[10], AL		
 		
 	MOV AX, DX					;AX = 7212	;DX = 0
 	MOV DX, 0
 	DIV ONETHOU					;AX = 7		;DX = 212
-	ADD AL, 48
+	ADD AL, "0"
 	MOV MENU2REX[11], AL
 
 	MOV AX, DX					;AX = 212	;DX = 0
 	MOV DX, 0
 	DIV HUNDRED					;AX = 2		;DX = 12
-	ADD AL, 48
+	ADD AL, "0"
 	MOV MENU2REX[12], AL
 	
 	MOV AX, DX					;AL = 12	;AH = 0
 	DIV TENB					;AL = 1		;AH = 2
-	ADD AL, 48
-	ADD AH, 48
+	ADD AL, "0"
+	ADD AH, "0"
 	MOV MENU2REX[14], AL
 	MOV MENU2REX[15], AH
 	
@@ -619,25 +619,25 @@ MENU2_REPORT_PROC PROC
 
 	DIV HUNDRED					;AX = 1554	;DX = 21
 	DIV TENB					;AH = 4		;AL = 155
-	ADD AH, 48
+	ADD AH, "0"
 	MOV MENU2REX[23], AH		;	---4.--
 	
 	MOV AH, 0
 	DIV TENB					;AH = 5		;AL = 15
-	ADD AH, 48
+	ADD AH, "0"
 	MOV MENU2REX[22], AH		;	--54.--
 	
 	MOV AH, 0
 	DIV TENB					;AH = 5		;AL = 1
-	ADD AH, 48
-	ADD AL, 48
+	ADD AH, "0"
+	ADD AL, "0"
 	MOV MENU2REX[21], AH		;	-554.--
 	MOV MENU2REX[20], AL		;	1554.--
 	
 	MOV AX, DX					;AX = 21
 	DIV TENB					;AH = 1		;AL = 2
-	ADD AL, 48
-	ADD AH, 48
+	ADD AL, "0"
+	ADD AH, "0"
 	MOV MENU2REX[25], AL		;	1554.2-
 	MOV MENU2REX[26], AH		;	1554.21
 	
@@ -718,25 +718,25 @@ DISPLAY_APPLE PROC
 		MOV AX, [BX]				;AX = 17212	;DX = 0
 		
 		DIV TENTHOU					;AX = 1		;DX = 7212
-		ADD AL, 48
+		ADD AL, "0"
 		MOV APPLEX[DI+0], AL		
 		
 		MOV AX, DX					;AX = 7212	;DX = 0
 		MOV DX, 0
 		DIV ONETHOU					;AX = 7		;DX = 212
-		ADD AL, 48
+		ADD AL, "0"
 		MOV APPLEX[DI+1], AL
 
 		MOV AX, DX					;AX = 212	;DX = 0
 		MOV DX, 0
 		DIV HUNDRED					;AX = 2		;DX = 12
-		ADD AL, 48
+		ADD AL, "0"
 		MOV APPLEX[DI+2], AL
 		
 		MOV AX, DX					;AL = 12	;AH = 0
 		DIV TENB					;AL = 1		;AH = 2
-		ADD AL, 48
-		ADD AH, 48
+		ADD AL, "0"
+		ADD AH, "0"
 		MOV APPLEX[DI+3], "."
 		MOV APPLEX[DI+4], AL
 		MOV APPLEX[DI+5], AH
