@@ -51,7 +51,7 @@
 	MENU2RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,15 DUP (196),194,5 DUP (196),194,10 DUP (196),194,10 DUP (196),180,"$"
 	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Apple Picked  ",179," Bin "    ,179," Bin Rate ",179," Bin Value",179,"$"
 	MENU2RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,15 DUP (196)     ,197,5 DUP (196),197,10 DUP (196),197,10 DUP (196),180,"$"
-	MENU2REX DB                                                     179,"     "    ,179,"          ",179,"          ",179,"$"
+	MENU2REX DB                                                     179,"     "    ,179,"      .   ",179,"      .   ",179,"$"
 	MENU2REN DB                                    "              ",179,"   - "    ,179,"    --.-- ",179,"    --.-- ",179,"$"
 	MENU2RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,15 DUP (205)     ,216,5 DUP (205),216,10 DUP (205),216,10 DUP (205),181,"$"
 	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"               ",179,"     "    ,179,"          ",179,"          ",179,"$"
@@ -106,8 +106,18 @@
 	APPLE_RATEPH DB 8 DUP(?)	;APPLE RATE POINTER HIGH
 	APPLE_RATEPL DB 8 DUP(?)	;APPLE RATE POINTER LOW
 	
-	VALUE1  DB 7 DUP(0)
-	VALUE2  DB 7 DUP(0)
+    HOURS_VAR   DB 7 DUP(0)
+	APPLE_VAR  DB 7 DUP(0)
+	BIN_VAR  DB 7 DUP(0)
+	
+	BIN_VALUE_AX DW 7 DUP(0)
+	BIN_VALUE_AX_PL DB 7 DUP(0)
+	BIN_VALUE_AX_PH DB 7 DUP(0)
+	
+	BIN_VALUE_DX DW 7 DUP(0)
+	BIN_VALUE_DX_PL DB 7 DUP(0)
+	BIN_VALUE_DX_PH DB 7 DUP(0)
+	
 	
 	RESULTB	DB ?
 			DB ?
@@ -139,6 +149,7 @@
 	TENB 	DB 	  10
 	TENW 	DW    10
 	
+	
 	PASSWRD DB "password$"
 	PASS_IN	DB 9 DUP (?)
 	INPUT	DB ?
@@ -151,6 +162,7 @@
 	AXX DW ?
 	CXX DW ?	;TO SAVE LOOP COUNTER
 	SII DW ?	;
+	DII DW ?
 	
 .CODE
 
@@ -211,17 +223,27 @@ LOGIN PROC
 LOGIN ENDP
 
 POINTER PROC	;THIS INGENUITY IS MADE POSSIBLE BY VERNIY xD
-	MOV DX, OFFSET DAY
+	MOV AX, OFFSET BIN_VALUE_AX
+	MOV DX, OFFSET BIN_VALUE_DX
+	MOV BX, OFFSET DAY
 	MOV CX,7	;7 DAYS A WEEK
 	MOV SI,0
 	DAYCP:		;Stands for 'Day Create Pointer' loop
-		MOV DAYPH[SI], DH;SAVE POINTER FOR LATER
-		MOV DAYPL[SI], DL;SAVE POINTER FOR LATER
+		MOV DAYPH[SI], BH;
+		MOV DAYPL[SI], BL;
 		
-		ADD DX, 10	;Since each string length is 10, add 10 and we will find the next address of the next day
+		MOV BIN_VALUE_AX_PH[SI], AH;
+		MOV BIN_VALUE_AX_PL[SI], AL;
+		
+		MOV BIN_VALUE_DX_PH[SI], DH;
+		MOV BIN_VALUE_DX_PL[SI], DL;
+		
+		ADD AX, 2	;Size of DW is 2
+		ADD DX, 2	;
+		ADD BX, 10	;Since each string length is 10, add 10 and we will find the next address of the next day
 		INC SI
 	LOOP DAYCP
-	
+    
 	MOV AX, OFFSET APPLE
 	MOV BX, OFFSET APPLE_RATE
 	MOV CX,8	;8 APPLE IN THE LIST
@@ -234,10 +256,9 @@ POINTER PROC	;THIS INGENUITY IS MADE POSSIBLE BY VERNIY xD
 		MOV APPLE_RATEPL[SI], BL	;Really, I created pointers so I could use them in increments of ONE
 		
 		ADD AX, 15	;Apple's name string are 15 in length
-		ADD BX, 2	;
+		ADD BX, 2	;Size of DW is 2
 		INC SI
 	LOOP APPLECP
-	
 	RET
 POINTER ENDP
 
@@ -285,7 +306,7 @@ MENU1 PROC
 		JMP MENU1_INPUT_HOURS	;
 		
 		MENU1_INPUT_HOURS_VALID:
-		MOV VALUE1[SI], AL	;STORE IN 'HOURS' 
+		MOV HOURS_VAR[SI], AL	;STORE IN 'HOURS' 
 		ADD TTL_HOUR , AL	;SUM OF 'HOURS'
 		
 		MOV AH, 0
@@ -324,7 +345,7 @@ MENU1 PROC
 		MOV DL,DAYPL[SI]
 		INT 21H	
 		
-		MOV AL,VALUE1[SI]
+		MOV AL,HOURS_VAR[SI]
 		ADD AL, 48
 		MOV DI, 10			;The location of the column 'Hours'
 		MOV MENU1REX[DI], AL;
@@ -462,7 +483,7 @@ MENU2_INPUT_PROC PROC
 		
 	MENU2_INPUT_APPLE_VALID:
 		DEC AL	 			;User Input - 1 = Index of Apple
-		MOV VALUE1[SI], AL	;STORE IN 'APPLE TYPE' 
+		MOV APPLE_VAR[SI], AL	;STORE IN 'APPLE TYPE' 
 		MOV AH, 0
 		MOV DI, AX
 	
@@ -494,21 +515,38 @@ MENU2_INPUT_PROC PROC
 		JMP MENU2_INPUT_BIN	;
 	
 	MENU2_INPUT_BIN_VALID:
-		MOV VALUE2[SI], AL	;STORE IN 'APPLE TYPE' 
+		MOV BIN_VAR[SI], AL	;STORE IN 'BIN' 
+        CALL MENU2_PROCESS_PROC
 		JMP INPUTM2_COMPLETE
-	
-	; MOV AH, 0
-	; MUL HOUR_RATE
-	; MOV RESULTB[SI] , AL;STORE IN 'TOTAL PAY'
-	; ADD TTL_BIN_VALUE, AX;SUM OF 'TOTAL BIN VALUE'
+		
 	MENU2_INPUT_APPLE_NONE:
 		DEC AL              ;DECREASE 0
-		MOV VALUE1[SI], AL  ;MOVE -1 TO VALUE1[SI]
+		MOV APPLE_VAR[SI], AL  ;MOVE -1 TO APPLE_VAR[SI]
 		
 	INPUTM2_COMPLETE:
 		INC SI
 	RET
 MENU2_INPUT_PROC ENDP
+
+MENU2_PROCESS_PROC PROC
+	MOV DII, DI
+	MOV AH, 0                   ;AL already has the valid number of bins
+	MOV BH, APPLE_RATEPH[DI]    ;[DI] contains the types of apple the user had input previously
+	MOV BL, APPLE_RATEPL[DI]    ;Import the apple_rate from pointers
+	MOV BX, [BX]                
+	MUL BX
+	
+	MOV BH, BIN_VALUE_AX_PH[SI]	
+	MOV BL, BIN_VALUE_AX_PL[SI]
+	MOV [BX], AX
+	
+	MOV BH, BIN_VALUE_DX_PH[SI]	
+	MOV BL, BIN_VALUE_DX_PL[SI]	
+	MOV [BX], DX				;DX:AX = 155421
+
+	MOV DI, DII
+	RET
+MENU2_PROCESS_PROC ENDP
 
 MENU2_REPORT_PROC PROC
 		
@@ -523,7 +561,7 @@ MENU2_REPORT_PROC PROC
 	INT 21H
 		
 	MOV BH, 0			;The apple name which user selected
-	MOV BL, VALUE1[SI]
+	MOV BL, APPLE_VAR[SI]
 	CMP BL, BH			;CHECK IF IT'S NULL, 0 IS NOT NULL
 	JL  MENU2_REPORT_NULL   ;-1 < 0, THUS WE CAN CONCULDE IF IT'S NULL
 	JMP MENU2_REPORT_NOT_NULL
@@ -539,7 +577,7 @@ MENU2_REPORT_PROC PROC
 	MOV DL, APPLEPL[DI]
 	INT 21H	
 		
-	MOV BL, VALUE2[SI]
+	MOV BL, BIN_VAR[SI]
 	ADD BL, 48
 	MOV MENU2REX[4], BL
 		
@@ -568,9 +606,40 @@ MENU2_REPORT_PROC PROC
 	DIV TENB					;AL = 1		;AH = 2
 	ADD AL, 48
 	ADD AH, 48
-	MOV MENU2REX[13], "."
 	MOV MENU2REX[14], AL
 	MOV MENU2REX[15], AH
+	
+	MOV BH, BIN_VALUE_AX_PH[SI]	
+	MOV BL, BIN_VALUE_AX_PL[SI]	
+	MOV AX, [BX]
+	
+	MOV BH, BIN_VALUE_DX_PH[SI]	
+	MOV BL, BIN_VALUE_DX_PL[SI]	
+	MOV DX, [BX]				;DX:AX = 155421
+
+	DIV HUNDRED					;AX = 1554	;DX = 21
+	DIV TENB					;AH = 4		;AL = 155
+	ADD AH, 48
+	MOV MENU2REX[23], AH		;	---4.--
+	
+	MOV AH, 0
+	DIV TENB					;AH = 5		;AL = 15
+	ADD AH, 48
+	MOV MENU2REX[22], AH		;	--54.--
+	
+	MOV AH, 0
+	DIV TENB					;AH = 5		;AL = 1
+	ADD AH, 48
+	ADD AL, 48
+	MOV MENU2REX[21], AH		;	-554.--
+	MOV MENU2REX[20], AL		;	1554.--
+	
+	MOV AX, DX					;AX = 21
+	DIV TENB					;AH = 1		;AL = 2
+	ADD AL, 48
+	ADD AH, 48
+	MOV MENU2REX[25], AL		;	1554.2-
+	MOV MENU2REX[26], AH		;	1554.21
 	
 	MOV AH, 09H
 	LEA DX,MENU2REX
