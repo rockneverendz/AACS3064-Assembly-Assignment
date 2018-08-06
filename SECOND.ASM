@@ -24,13 +24,15 @@
 	MEN7	 DB 0DH,0AH,"  ",179,"0",179," Exit                                               ",179,"$"
 	MEN8	 DB 0DH,0AH,"  ",192,196,193,52 DUP (196)                                          ,217,"$"
 	MEN9	 DB 0DH,0AH,0DH,0AH,"   Enter selection : $"
-	MENU_ERROR DB       0DH,0AH,"     INVALID INPUT > ENTER INDEX OF THE REPORT, 0 TO EXIT$"
+	MENU_ERROR DB       0DH,0AH,"     INVALID INPUT > ENTER INDEX OF THE REPORT, 0 TO EXIT"
+               DB       0DH,0AH,"                   > $" ;"Press anykey to continue"
 	
-	CONT     DB 0DH,0AH,"   Continue? (Y/N) : $"
-	INPUT_ERROR DB 0DH,0AH,"                                    INVALID INPUT$"
+	CONT            DB 0DH,0AH,"   Continue? (Y/N) : $"
+	ERROR_CONT      DB         "Press any key to continue......$"
 	
 	MENU1IN         DB 0DH,0AH,"   Enter hour worked on $"
-	MENU1IN_ERROR   DB 0DH,0AH,20 DUP (" "),"INVALID INPUT > PLEASE ENTER A VALID NUMBER, 0 IF NONE$"
+	MENU1IN_ERROR   DB 0DH,0AH,20 DUP (" "),"INVALID INPUT > PLEASE ENTER A VALID NUMBER, 0 IF NONE"
+                    DB 0DH,0AH,20 DUP (" "),"              > $" ;"Press anykey to continue"
 	MENU1RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,10 DUP (196),194,11 DUP (196),194,20 DUP (196),180,"$"
 	MENU1RE2 DB 0DH,0AH,"  ",179," Day      ",179," Hours    ",179," Hour Rate ",179," Total Pay          ",179,"$"
 	MENU1RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,10 DUP (196),197,11 DUP (196),197,20 DUP (196)          ,180,"$"
@@ -40,9 +42,11 @@
 	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,10 DUP (205),207,11 DUP (205),207,20 DUP (205)          ,190,"$"
 	
 	MENU2IN1        DB 0DH,0AH,"   Select apple picked on $"
+	MENU2IN1_ERROR  DB 0DH,0AH,22 DUP (" "),"INVALID INPUT > ENTER INDEX OF THE APPLES, 0 IF NONE"
+                    DB 0DH,0AH,22 DUP (" "),"              > $" ;"Press anykey to continue"
 	MENU2IN2        DB 0DH,0AH,"   Number of bins of $"
-    MENU2IN1_ERROR  DB 0DH,0AH,22 DUP (" "),"INVALID INPUT > ENTER INDEX OF THE APPLES, 0 IF NONE$"
-	MENU2IN2_ERROR  DB 0DH,0AH,22 DUP (" "),"INVALID INPUT > PLEASE ENTER A VALID NUMBER$"
+    MENU2IN2_ERROR  DB 0DH,0AH,22 DUP (" "),"INVALID INPUT > PLEASE ENTER A VALID NUMBER"
+                    DB 0DH,0AH,22 DUP (" "),"              > $" ;"Press anykey to continue"
     
 	MENU2RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,15 DUP (196),194,5 DUP (196),194,10 DUP (196),194,10 DUP (196),180,"$"
 	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Apple Picked  ",179," Bin "    ,179," Bin Rate ",179," Bin Value",179,"$"
@@ -277,6 +281,7 @@ MENU1 PROC
 		MOV AH,09H	;
 		LEA DX,MENU1IN_ERROR	;
 		INT 21H		;
+        CALL ERROR_CONT_PROC;Press Any Key To Continue
 		JMP MENU1_INPUT_HOURS	;
 		
 		MENU1_INPUT_HOURS_VALID:
@@ -452,6 +457,7 @@ MENU2_INPUT_PROC PROC
 		MOV AH,09H			;
 		LEA DX,MENU2IN1_ERROR
 		INT 21H				;
+        CALL ERROR_CONT_PROC;Press Any Key To Continue
 		JMP MENU2_INPUT_APPLE;
 		
 	MENU2_INPUT_APPLE_VALID:
@@ -482,8 +488,9 @@ MENU2_INPUT_PROC PROC
 		
 	MENU2_INPUT_BIN_INVALID:
 		MOV AH,09H			;
-		LEA DX,MENU2IN1_ERROR
+		LEA DX,MENU2IN2_ERROR
 		INT 21H				;
+        CALL ERROR_CONT_PROC;Press Any Key To Continue
 		JMP MENU2_INPUT_BIN	;
 	
 	MENU2_INPUT_BIN_VALID:
@@ -721,6 +728,14 @@ CONTINUE PROC
 	RET
 CONTINUE ENDP
 
+ERROR_CONT_PROC PROC
+    LEA DX,ERROR_CONT   ;Press Any Key To Continue
+    INT 21H				;
+    MOV AH,07H	        ;Invisible Input
+    INT 21H
+    RET
+ERROR_CONT_PROC ENDP
+
 MAIN PROC
 	MOV AX,@DATA
 	MOV DS,AX
@@ -757,6 +772,7 @@ MAIN PROC
 	MOV AH,09H			;
 	LEA DX,MENU_ERROR	;
 	INT 21H				;
+    CALL ERROR_CONT_PROC;Press Any Key To Continue
 	JMP SELECTMENU
 	
 	M1:
