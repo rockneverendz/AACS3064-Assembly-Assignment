@@ -56,7 +56,7 @@
 	MENU2REX DB                                                     179,"     "    ,179,"      .   ",179,"      .   ",179,"$"
 	MENU2REN DB                                    "              ",179,"   - "    ,179,"    --.-- ",179,"    --.-- ",179,"$"
 	MENU2RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,15 DUP (205)     ,216,5 DUP (205),216,10 DUP (205),216,10 DUP (205),181,"$"
-	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"               ",179,"     "    ,179,"          ",179,"          ",179,"$"
+	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"               ",179,"     "    ,179,"          ",179,"      .   ",179,"$"
 	MENU2RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,15 DUP (205)     ,207,5 DUP (205),207,10 DUP (205),207,10 DUP (205),190,"$"
 	
 	
@@ -442,6 +442,43 @@ MENU2 PROC
 		CALL MENU2_REPORT_PROC  ;
 	LOOP MENU2_REPORT
 	
+	MOV AX, TTL_BIN_VALUE_AX	
+	MOV DX, TTL_BIN_VALUE_DX	;DX:AX = 1234567
+
+	DIV HUNDRED					;AX = 12345	;DX = 67
+	MOV BX, DX					;Save for later, since DX will be overwritten by the next divide
+	MOV DX, 0
+	DIV TENTHOU					;AX = 1		;DX = 2345
+	ADD AL, "0"
+	MOV MENU2RE5[50], AL		;	1----.--
+		
+	MOV AX, DX					;AX = 2345	;DX = 0
+	MOV DX, 0
+	DIV ONETHOU					;AX = 2		;DX = 345
+	ADD AL, "0"
+	MOV MENU2RE5[51], AL		;	12---.--
+
+	MOV AX, DX					;AX = 345	;DX = 0
+	MOV DX, 0
+	DIV HUNDRED					;AX = 3		;DX = 45
+	ADD AL, "0"
+	MOV MENU2RE5[52], AL		;	123--.--
+	
+	MOV AX, DX					;AL = 45	;AH = 0
+	DIV TENB					;AL = 4		;AH = 5
+	ADD AL, "0"
+	ADD AH, "0"
+	MOV MENU2RE5[53], AL		;	1234-.--
+	MOV MENU2RE5[54], AH		;	12345.--
+	
+	MOV AX, BX					;AL = 67	;AH = 0
+	DIV TENB					;AL = 6		;AH = 7
+	ADD AL, "0"
+	ADD AH, "0"
+	MOV MENU2RE5[56], AL		;	12345.6-
+	MOV MENU2RE5[57], AH		;	12345.67
+	
+	MOV AH, 09H
 	LEA DX, MENU2RE4
 	INT 21H
 	
@@ -533,7 +570,6 @@ MENU2_INPUT_PROC PROC
 MENU2_INPUT_PROC ENDP
 
 MENU2_PROCESS_PROC PROC
-	MOV DII, DI
 	MOV AH, 0                   ;AL already has the valid number of bins
 	MOV BH, APPLE_RATEPH[DI]    ;[DI] contains the types of apple the user had input previously
 	MOV BL, APPLE_RATEPL[DI]    ;Import the apple_rate from pointers
@@ -545,19 +581,12 @@ MENU2_PROCESS_PROC PROC
 	MOV [BX], AX
 	
 	MOV BH, BIN_VALUE_DX_PH[SI]	;Moving DX to BIN_VALUE_DX
-	MOV BL, BIN_VALUE_DX_PL[SI]	
+	MOV BL, BIN_VALUE_DX_PL[SI]	;120 484
 	MOV [BX], DX
 	
-	MOV BX, TTL_BIN_VALUE_AX	;Adding AX to TTL_BIN_VALUE_AX
-	ADD [BX], AX
+	ADD TTL_BIN_VALUE_AX, AX	;Adding AX to TTL_BIN_VALUE_AX
+	ADC TTL_BIN_VALUE_DX, DX	;Adding DX to TTL_BIN_VALUE_DX with carry (if there is)
 	
-	MOV BX, TTL_BIN_VALUE_DX	;Adding DX to TTL_BIN_VALUE_DX
-	ADC [BX], DX
-	
-	ADD AX, [BX]
-	ADC DX, [BX]
-
-	MOV DI, DII
 	RET
 MENU2_PROCESS_PROC ENDP
 
