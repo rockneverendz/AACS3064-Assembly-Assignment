@@ -6,6 +6,8 @@
     ;The github repo serves as a proof that we made it oursleves
     ;Just refer to the list of commits and you'll see how we almost went insane
     
+	;Test commit from SCY
+	
 	NEWL DB 0DH,0AH,"$"
 	
 	LGIN DB 0DH,0AH,"   ENTER PASSWORD : $"
@@ -160,7 +162,7 @@
 	TTL_BIN_VALUE	DW 0
 	
 	AXX DW ?
-	CXX DW ?	;TO SAVE LOOP COUNTER
+	CXX DW ?	;
 	SII DW ?	;
 	DII DW ?
 	
