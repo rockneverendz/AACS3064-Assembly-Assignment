@@ -41,11 +41,11 @@
 	
 	MENU1RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,10 DUP (196),194,11 DUP (196),194,20 DUP (196),180,"$"
 	MENU1RE2 DB 0DH,0AH,"  ",179," Day      ",179," Hours    ",179," Hour Rate ",179," Total Pay          ",179,"$"
-	MENU1RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,10 DUP (196),197,11 DUP (196),197,20 DUP (196)          ,180,"$"
-	MENU1REX DB                           " ",179,"          ",179,"           ",179,"                    ",179,"$"
-	MENU1RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,10 DUP (205),216,11 DUP (205),216,20 DUP (205)          ,181,"$"
-	MENU1RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"          ",179,"           ",179,"                    ",179,"$"
-	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,10 DUP (205),207,11 DUP (205),207,20 DUP (205)          ,190,"$"
+	MENU1RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,10 DUP (196),197,11 DUP (196) ,197,20 DUP (196)          ,180,"$"
+	MENU1REX DB                           " ",179,"          ",179,"           ",179,"                .00 ",179,"$"
+	MENU1RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,10 DUP (205),216,11 DUP (205) ,216,20 DUP (205)          ,181,"$"
+	MENU1RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"          ",179,"           ",179,"                .00 ",179,"$"
+	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,10 DUP (205),207,11 DUP (205) ,207,20 DUP (205)          ,190,"$"
 	
 	;STRINGS FOR MENU2
 	MENU2IN1        DB 0DH,0AH,"   Select apple picked on $"
@@ -92,7 +92,8 @@
 	APPLE1 	 DB 0DH,0AH,"  ",218,196,194,26 DUP (196)                ,194,25 DUP (196)               ,191,"$"
 	APPLE2 	 DB 0DH,0AH,"  ",179," ",179," Apple Types              ",179," Value Per Bin           ",179,"$"
 	APPLE3 	 DB 0DH,0AH,"  ",195,196,197,26 DUP (196)                ,197,25 DUP (196)               ,180,"$"
-	APPLEX	 DB                                         "           ",179,"                         ",179,"$"
+	APPLEX	 DB                                         "           ",179,"    .                    ",179,"$"
+	APPLEN	 DB 0DH,0AH,"  ",179,"0",179," NONE                     ",179,"                         ",179,"$"
 	APPLE4	 DB 0DH,0AH,"  ",192,196,193,26 DUP (196)                ,193,25 DUP (196)               ,217,"$"
 
 	;https://en.wikipedia.org/wiki/Code_page_437 for more box drawing characters	
@@ -121,7 +122,6 @@
 			DB "NZ Queen      $"
 			DB "Red Delicious $" 
 			DB "Royal Gala    $"
-	APPLE0	DB "NONE          $"
 	APPLEPH	DB 8 DUP(?)	;APPLE POINTER HIGH	;Same thing as DAY PONTER you see above
 	APPLEPL	DB 8 DUP(?)	;APPLE POINTER LOW
 				
@@ -186,6 +186,7 @@
 	HUNDRED DW   100
 	TENB 	DB 	  10
 	TENW 	DW    10 
+	NULL	DB " "
 	
 	PASSWRD DB "password$"
 	PASS_IN	DB 9 DUP (?)
@@ -195,6 +196,10 @@
 	CXX DW ?	;
 	SII DW ?	;
 	DII DW ?
+	
+	;<TO DO>
+	;A function to automatically insert value into strings
+	;Parameter : value in DX:AX, string address in some variable, string index in DI?
 	
 .CODE
 
@@ -375,20 +380,18 @@ MENU1 PROC
 		INT 21H
 		MOV DH,DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
 		MOV DL,DAYPL[SI]
-		INT 21H	
+		INT 21H
 		
 		MOV AL,HOURS_VAR[SI]
 		ADD AL, "0"
-		MOV DI, 10			;The location of the column 'Hours'
-		MOV MENU1REX[DI], AL;
+		MOV MENU1REX[10], AL;The location of the column 'Hours'
 		
 		MOV AH, 0
 		MOV AL, RESULTB[SI]
 		DIV TENB
 		ADD AX, 3030H		;ADD AL,"0"	;ADD AH,"0"
-		MOV DI, 42			;The location of the column 'Total Pay'
-		MOV MENU1REX[DI]  , AL
-		MOV MENU1REX[DI+1], AH
+		MOV MENU1REX[39], AL;The location of the column 'Total Pay'
+		MOV MENU1REX[40], AH
 		
 		MOV AH,09H	;
 		LEA DX,MENU1REX;INDENT
@@ -405,7 +408,7 @@ MENU1 PROC
 
 	DIV TENB				;AL = 2		;AH = 3
 	ADD AX, 3030H			;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU1RE5[23]  , AL	;The location of the column 'Hours'
+	MOV MENU1RE5[23], AL	;The location of the column 'Hours'
 	MOV MENU1RE5[24], AH	;
 
 	MOV DX, 0				;DX = 0
@@ -415,9 +418,9 @@ MENU1 PROC
 	DIV TENB				;AL = 3		;AH = 4
 	ADD AX, 3030H			;ADD AL,"0"	;ADD AH,"0"
 	ADD DL, 30H				;ADD DL,"0"
-	MOV MENU1RE5[55], AL	;The location of the column 'Total Pay'
-	MOV MENU1RE5[56], AH	
-	MOV MENU1RE5[57], DL
+	MOV MENU1RE5[52], AL	;The location of the column 'Total Pay'
+	MOV MENU1RE5[53], AH	
+	MOV MENU1RE5[54], DL
 	
 	MOV AH,09H
 	LEA DX, MENU1RE5
@@ -476,37 +479,9 @@ MENU2 PROC
 	
 	MOV AX, TTL_BIN_VALUE_AX	;INSERT TTL_BIN_VALUE INTO MENU2RE5 CHARACTER BY CHARACTER
 	MOV DX, TTL_BIN_VALUE_DX	;DX:AX = 1234567
-
-	DIV HUNDRED					;AX = 12345	;DX = 67
-	MOV BX, DX					;Save for later, since DX will be overwritten by the next divide
-	MOV DX, 0
-	DIV TENTHOU					;AX = 1		;DX = 2345
-	ADD AL, "0"
-	MOV MENU2RE5[50], AL		;	1----.--
-		
-	MOV AX, DX					;AX = 2345	;DX = 0
-	MOV DX, 0
-	DIV ONETHOU					;AX = 2		;DX = 345
-	ADD AL, "0"
-	MOV MENU2RE5[51], AL		;	12---.--
-
-	MOV AX, DX					;AX = 345	;DX = 0
-	MOV DX, 0
-	DIV HUNDRED					;AX = 3		;DX = 45
-	ADD AL, "0"
-	MOV MENU2RE5[52], AL		;	123--.--
-	
-	MOV AX, DX					;AL = 45	;AH = 0
-	DIV TENB					;AL = 4		;AH = 5
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU2RE5[53], AL		;	1234-.--
-	MOV MENU2RE5[54], AH		;	12345.--
-	
-	MOV AX, BX					;AL = 67	;AH = 0
-	DIV TENB					;AL = 6		;AH = 7
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU2RE5[56], AL		;	12345.6-
-	MOV MENU2RE5[57], AH		;	12345.67
+	MOV DI, OFFSET MENU2RE5		;Location of MENU2RE5 for later edit
+	ADD DI, 50					;Location of TTL_BIN column in MENU2RE5
+	CALL INJECT_DD_STRING
 	
 	MOV AH, 09H
 	LEA DX, MENU2RE4
@@ -653,33 +628,13 @@ MENU2_REPORT_PROC PROC
 	MOV BL, BIN_VAR[SI]
 	ADD BL, "0"
 	MOV MENU2REX[4], BL
-		
-	MOV DX, 0
+	
 	MOV BH, APPLE_RATEPH[DI]	
 	MOV BL, APPLE_RATEPL[DI]	
-	MOV AX, [BX]				;AX = 17212	;DX = 0
-		
-	DIV TENTHOU					;AX = 1		;DX = 7212
-	ADD AL, "0"
-	MOV MENU2REX[10], AL		
-		
-	MOV AX, DX					;AX = 7212	;DX = 0
-	MOV DX, 0
-	DIV ONETHOU					;AX = 7		;DX = 212
-	ADD AL, "0"
-	MOV MENU2REX[11], AL
-
-	MOV AX, DX					;AX = 212	;DX = 0
-	MOV DX, 0
-	DIV HUNDRED					;AX = 2		;DX = 12
-	ADD AL, "0"
-	MOV MENU2REX[12], AL
-	
-	MOV AX, DX					;AL = 12	;AH = 0
-	DIV TENB					;AL = 1		;AH = 2
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU2REX[14], AL
-	MOV MENU2REX[15], AH
+	MOV AX, [BX]					;AX = 17212	;DX = 0
+	MOV DI, OFFSET MENU2REX			;Location of the string you want to inject
+	ADD DI, 10						;Index of the string to begin injecting
+	CALL INJECT_DW_STRING
 	
 	MOV BH, BIN_VALUE_AX_PH[SI]	
 	MOV BL, BIN_VALUE_AX_PL[SI]	
@@ -687,29 +642,11 @@ MENU2_REPORT_PROC PROC
 	
 	MOV BH, BIN_VALUE_DX_PH[SI]	
 	MOV BL, BIN_VALUE_DX_PL[SI]	
-	MOV DX, [BX]				;DX:AX = 155421
-
-	DIV HUNDRED					;AX = 1554	;DX = 21
-	DIV TENB					;AH = 4		;AL = 155
-	ADD AH, "0"
-	MOV MENU2REX[23], AH		;	---4.--
+	MOV DX, [BX]					;DX:AX = 155421
 	
-	MOV AH, 0
-	DIV TENB					;AH = 5		;AL = 15
-	ADD AH, "0"
-	MOV MENU2REX[22], AH		;	--54.--
-	
-	MOV AH, 0
-	DIV TENB					;AH = 5		;AL = 1
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU2REX[21], AH		;	-554.--
-	MOV MENU2REX[20], AL		;	1554.--
-	
-	MOV AX, DX					;AX = 21
-	DIV TENB					;AH = 1		;AL = 2
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU2REX[25], AL		;	1554.2-
-	MOV MENU2REX[26], AH		;	1554.21
+	MOV DI, OFFSET MENU2REX		
+	ADD DI, 19					
+	CALL INJECT_DD_STRING
 	
 	MOV AH, 09H
 	LEA DX,MENU2REX
@@ -842,39 +779,11 @@ MENU3_INPUT_PAY_PROC PROC
 MENU3_INPUT_PAY_PROC ENDP
 
 MENU3_INPUT_BIN_CONFIRMATION PROC
-	MOV AX, TTL_BIN_VALUE_AX	;INSERT TTL_BIN_VALUE INTO MENU2RE5 CHARACTER BY CHARACTER
-	MOV DX, TTL_BIN_VALUE_DX	;DX:AX = 1234567
-
-	DIV HUNDRED					;AX = 12345	;DX = 67
-	MOV BX, DX					;Save for later, since DX will be overwritten by the next divide
-	MOV DX, 0
-	DIV TENTHOU					;AX = 1		;DX = 2345
-	ADD AL, "0"
-	MOV MENU3CF_BIN_2[29], AL		;	1----.--
-		
-	MOV AX, DX					;AX = 2345	;DX = 0
-	MOV DX, 0
-	DIV ONETHOU					;AX = 2		;DX = 345
-	ADD AL, "0"
-	MOV MENU3CF_BIN_2[30], AL		;	12---.--
-
-	MOV AX, DX					;AX = 345	;DX = 0
-	MOV DX, 0
-	DIV HUNDRED					;AX = 3		;DX = 45
-	ADD AL, "0"
-	MOV MENU3CF_BIN_2[31], AL		;	123--.--
-	
-	MOV AX, DX					;AL = 45	;AH = 0
-	DIV TENB					;AL = 4		;AH = 5
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU3CF_BIN_2[32], AL		;	1234-.--
-	MOV MENU3CF_BIN_2[33], AH		;	12345.--
-	
-	MOV AX, BX					;AL = 67	;AH = 0
-	DIV TENB					;AL = 6		;AH = 7
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV MENU3CF_BIN_2[35], AL		;	12345.6-
-	MOV MENU3CF_BIN_2[36], AH		;	12345.67
+	MOV AX, TTL_BIN_VALUE_AX		;INSERT TTL_BIN_VALUE INTO MENU2RE5 CHARACTER BY CHARACTER
+	MOV DX, TTL_BIN_VALUE_DX		;DX:AX = 1234567
+	MOV DI, OFFSET MENU3CF_BIN_2	;Location of the string you want to inject
+	ADD DI, 29						;Index of the string to begin injecting
+	CALL INJECT_DD_STRING
 	
 	MENU3_INPUT_BIN_CF_PROMPT:
 	MOV AH,09H
@@ -990,8 +899,9 @@ DISPLAY_APPLE PROC
 	LEA DX, APPLE3
 	INT 21H
 	
-	MOV DI, 13			;Location of Value Per Bin
-	MOV CX, 8			;8 APPLES IN THE LIST
+	MOV DI, OFFSET APPLEX	;Location of the string you want to inject
+	ADD DI, 13				;Index of the string to begin injecting
+	MOV CX, 8				;8 APPLES IN THE LIST
 	MOV SI, 0
 	APPLE_LIST:
 		INC	INDENTX[5]	;Incrementing the character '0' to '8'
@@ -1001,34 +911,11 @@ DISPLAY_APPLE PROC
 		MOV DL, APPLEPL[SI]
 		INT 21H
 		
-		MOV DX, 0
 		MOV BH, APPLE_RATEPH[SI]	
 		MOV BL, APPLE_RATEPL[SI]	
 		MOV AX, [BX]				;AX = 17212	;DX = 0
-		
-		DIV TENTHOU					;AX = 1		;DX = 7212
-		ADD AL, "0"
-		MOV APPLEX[DI+0], AL		
-		
-		MOV AX, DX					;AX = 7212	;DX = 0
-		MOV DX, 0
-		DIV ONETHOU					;AX = 7		;DX = 212
-		ADD AL, "0"
-		MOV APPLEX[DI+1], AL
-
-		MOV AX, DX					;AX = 212	;DX = 0
-		MOV DX, 0
-		DIV HUNDRED					;AX = 2		;DX = 12
-		ADD AL, "0"
-		MOV APPLEX[DI+2], AL
-		
-		MOV AX, DX					;AL = 12	;AH = 0
-		DIV TENB					;AL = 1		;AH = 2
-		ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-		MOV APPLEX[DI+3], "."
-		MOV APPLEX[DI+4], AL
-		MOV APPLEX[DI+5], AH
-		
+		CALL INJECT_DW_STRING		;DI already set before the loop
+	
 		MOV AH, 09H
 		LEA DX, APPLEX
 		INT 21H
@@ -1037,17 +924,7 @@ DISPLAY_APPLE PROC
 	LOOP APPLE_LIST
 	
 	MOV	INDENTX[5], "0" ;Initializing to 0, we will add this character value by one increment each loop
-	LEA DX, INDENTX
-	INT 21H
-	LEA DX, APPLE0
-	INT 21H
-	MOV APPLEX[DI+0], " "		
-	MOV APPLEX[DI+1], " "
-	MOV APPLEX[DI+2], " "
-	MOV APPLEX[DI+3], " "
-	MOV APPLEX[DI+4], " "
-	MOV APPLEX[DI+5], " "
-	LEA DX, APPLEX
+	LEA DX, APPLEN
 	INT 21H
 	
 	LEA DX, APPLE4
@@ -1057,6 +934,100 @@ DISPLAY_APPLE PROC
 	MOV SI, SII;
 	RET 
 DISPLAY_APPLE ENDP
+
+INJECT_DD_STRING PROC
+	;Guide to use this funtion/procedure
+	;Move the value you want to display to DX:AX
+	;Load the string address to DI
+	;Add the index to where you want to inject.
+	
+	;-------------------------------;Function call template
+	; MOV AX, "Lower DD here"		;Value you want to display
+	; MOV DX, "Higher DD here"		;DX:AX = 1234567
+	; MOV DI, OFFSET "string here"	;Location of the string you want to inject
+	; ADD DI, "index here"			;Index of the string to begin injecting
+	; CALL INJECT_DD_STRING
+	MOV CXX, CX
+	MOV CL, " "					;Empty space ready to replace extra 0
+	
+	DIV HUNDRED					;AX = 12345	;DX = 67
+	MOV BX, DX					;Save for later, since DX will be overwritten by the next divide
+	
+	MOV [DI]  , CL				;Initialize first index to empty space
+	CMP AX    , 10000			;Check if it's less than 10000
+	JL	THOUSAND_S				;If yes skip divide TENTHOU
+	
+	MOV DX, 0
+	DIV TENTHOU					;AX = 1		;DX = 2345
+	ADD AL, "0"
+	MOV [DI]  , AL		;	1----.--
+	MOV AX, DX					;AX = 2345	;DX = 0
+	
+	THOUSAND_S:
+	MOV [DI+1], CL				;Initialize second index to empty space
+	CMP AX    , 1000            ;Check if it's less than 1000
+	JL	HUNDRED_S				;If yes skip divide ONETHOU
+	
+	MOV DX, 0
+	DIV ONETHOU					;AX = 2		;DX = 345
+	ADD AL, "0"
+	MOV [DI+1], AL		;	12---.--
+	MOV AX, DX					;AX = 345	;DX = 0
+	
+	HUNDRED_S:
+	MOV DX, 0
+	DIV HUNDRED					;AX = 3		;DX = 45
+	ADD AL, "0"
+	MOV [DI+2], AL		;	123--.--
+	
+	MOV AX, DX					;AL = 45	;AH = 0
+	DIV TENB					;AL = 4		;AH = 5
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	MOV [DI+3], AL		;	1234-.--
+	MOV [DI+4], AH		;	12345.--
+	
+	MOV AX, BX					;AL = 67	;AH = 0
+	DIV TENB					;AL = 6		;AH = 7
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	MOV [DI+6], AL		;	12345.6-
+	MOV [DI+7], AH		;	12345.67
+	
+	MOV CX, CXX
+	RET
+INJECT_DD_STRING ENDP
+
+INJECT_DW_STRING PROC
+	; We will zero out DX for you ;)
+	;-------------------------------;Function call template
+	; MOV AX, "DW here"				;Value you want to display
+	; MOV DI, OFFSET "string here"	;Location of the string you want to inject
+	; ADD DI, "index here"			;Index of the string to begin injecting
+	; CALL INJECT_DW_STRING
+	
+	MOV DX, 0
+	DIV HUNDRED					;AX = 345	;DX = 67
+	MOV BX, DX					;Save for later, since DX will be overwritten by the next divide
+	
+	MOV DX, 0					;AX = 345	;DX = 0
+	DIV HUNDRED					;AX = 3		;DX = 45
+	ADD AL, "0"
+	MOV [DI]  , AL		;	3--.--
+	
+	MOV AX, DX					;AL = 45	;AH = 0
+	DIV TENB					;AL = 4		;AH = 5
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	MOV [DI+1], AL		;	34-.--
+	MOV [DI+2], AH		;	345.--
+	
+	MOV AX, BX					;AL = 67	;AH = 0
+	DIV TENB					;AL = 6		;AH = 7
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	MOV [DI+4], AL		;	345.6-
+	MOV [DI+5], AH		;	345.67
+	
+	RET
+INJECT_DW_STRING ENDP
+
 
 CONTINUE PROC
 	CLOOP:
