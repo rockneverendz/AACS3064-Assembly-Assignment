@@ -73,10 +73,10 @@
     
 	MENU3CF_CONT	DB 0DH,0AH,"   Would you like to continue with this value? (Y/N) : $"
     
-	MENU3IN1        DB 0DH,0AH,"   Enter Total Hour Pay  : $"
+	MENU3IN1        DB 0DH,    "   Enter Total Hour Pay  :[   .  ]$"
 	MENU3IN1_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID PAY"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
-	MENU3IN2        DB 0DH,    "   Enter Total Bin Value : $"
+	MENU3IN2        DB 0DH,    "   Enter Total Bin Value :[     .  ]$"
     MENU3IN2_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID VALUE"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
    
@@ -157,10 +157,7 @@
 	TTL_HOUR_PAY	DW 0
 	
 	TTL_BIN_INPUT 	DW 0
-	; TTL_BIN_INPUT 			DB 7 DUP(0)
-	; TTL_BIN_INPUT_LENGTH 	DB
-	
-	
+		
 	RESULTB	DB ?
 			DB ?
 			DB ?
@@ -186,6 +183,7 @@
 	HUNDRED DW   100
 	TENB 	DB 	  10
 	TENW 	DW    10 
+	TEND	DD    10
 	NULL	DB " "
 	
 	PASSWRD DB "password$"
@@ -774,7 +772,53 @@ MENU3_INPUT_PAY_CONFIRMATION PROC
 MENU3_INPUT_PAY_CONFIRMATION ENDP
 
 MENU3_INPUT_PAY_PROC PROC
+	MOV TTL_HOUR_PAY, 0
+	MOV AH, 09H
+	LEA DX, NEWL
+	INT 21H
 	
+	MENU3_INPUT_PAY_START:
+		MOV AX, TTL_HOUR_PAY		;Value you want to display
+		MOV DI, OFFSET MENU3IN1		;Location of the string you want to inject
+		ADD DI, 28					;Index of the string to begin injecting
+		CALL INJECT_DW_STRING
+		
+		MOV AH, 09H
+		LEA DX, MENU3IN1
+		INT 21H
+		
+		MOV AH, 07H					;INPUT NO ECHO
+		INT 21H
+		
+		CMP AL, 13					;If enter key
+		JE	MENU3_INPUT_PAY_DONE
+		CMP AL, 8					;If backspace
+		JE	MENU3_INPUT_PAY_BACKSPACE
+		CMP AL, "0"					;If lower than "0"
+		JL	MENU3_INPUT_PAY_START
+		CMP AL, "9"					;If greater than "9"
+		JG	MENU3_INPUT_PAY_START
+		MOV AH, 0
+		SUB AL, "0"					;From char to int
+		MOV BX, AX					;Save for later as AX will get overwritten by the next statement
+		
+		MOV AX, TTL_HOUR_PAY		;Import from var
+		MOV DX, 0
+		MUL TENW				 	;Multiply by 10
+		
+		ADD AX, BX					;Add input value to (TTL_HOUR_PAY * 10)
+		MOV TTL_HOUR_PAY, AX		;Then update var
+		JMP MENU3_INPUT_PAY_START
+		
+	MENU3_INPUT_PAY_BACKSPACE:
+		MOV AX, TTL_HOUR_PAY		;Import from var
+		MOV DX, 0					
+		DIV TENW				 	;Divide by 10
+		
+		MOV TTL_HOUR_PAY, AX		;Then store it back to var
+		JMP MENU3_INPUT_PAY_START
+		
+	MENU3_INPUT_PAY_DONE:
 	RET
 MENU3_INPUT_PAY_PROC ENDP
 
@@ -814,9 +858,18 @@ MENU3_INPUT_BIN_CONFIRMATION PROC
 MENU3_INPUT_BIN_CONFIRMATION ENDP
 
 MENU3_INPUT_BIN_PROC PROC
+	MOV TTL_BIN_VALUE_AX, 0			;Zeroing
+	MOV TTL_BIN_VALUE_DX, 0	
+	MOV AH, 09H
+	LEA DX, NEWL
+	INT 21H
 	
 	MENU3_INPUT_BIN_START:
-		CALL MENU3_INPUT_BIN_SE_PROC
+		MOV AX, TTL_BIN_VALUE_AX	;Value you want to display
+		MOV DX, TTL_BIN_VALUE_DX	
+		MOV DI, OFFSET MENU3IN2		;Location of the string you want to inject
+		ADD DI, 28					;Index of the string to begin injecting
+		CALL INJECT_DD_STRING
 		
 		MOV AH, 09H
 		LEA DX, MENU3IN2
@@ -835,34 +888,50 @@ MENU3_INPUT_BIN_PROC PROC
 		JG	MENU3_INPUT_BIN_START
 		MOV AH, 0
 		SUB AL, "0"					;From char to int
-		MOV BX, AX					;Save for later as AX will get overwritten by the next statement
 		
-		MOV AX, TTL_BIN_INPUT		;Import from array
+		MOV AXX, AX					;Save for later as AX will get overwritten by the next statement
+		
 		MOV DX, 0
+		MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
 		MUL TENW				 	;Multiply by 10
+		MOV BX, AX					
+		MOV CX, DX					;CARRY OF AX
 		
-		ADD AX, BX					;Add input value to (TTL_BIN_INPUT * 10)
-		MOV TTL_BIN_INPUT, AX		;Then update array
+		MOV DX, 0
+		MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
+		MUL TENW				 	;Multiply by 10
+		ADD AX, CX					;ADD CARRY OF AX TO AX(DX)
+		
+		ADD BX, AXX
+		ADC AX, 0
+		
+		MOV TTL_BIN_VALUE_AX, BX 	;Then update array
+		MOV TTL_BIN_VALUE_DX, AX
+		
 		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_BACKSPACE:
-		MOV AX, TTL_BIN_INPUT		;Import from array
-		MOV DX, 0					
+		MOV AX, TTL_BIN_VALUE_DX	;Value to divide
+		MOV DX, 0
 		DIV TENW				 	;Divide by 10
 		
-		MOV TTL_BIN_INPUT, AX		;Then store it back to array
+		MOV CX, AX					;Move qoutient to CX
+		MOV BX, DX					;Move remainder to BX
+		
+		MOV AX, TTL_BIN_VALUE_AX	
+		MOV DX, BX					;Move remainder to DX
+		DIV TENW
+		
+		ADD DX, CX					;Add qoutient to DX
+		
+		MOV TTL_BIN_VALUE_AX, DX
+		MOV TTL_BIN_VALUE_DX, AX 	;Then update array
+		
 		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_DONE:
 	RET
 MENU3_INPUT_BIN_PROC ENDP
-
-MENU3_INPUT_BIN_SE_PROC PROC
-	MOV AX, TTL_BIN_INPUT		;Import from array
-	
-	
-	RET
-MENU3_INPUT_BIN_SE_PROC ENDP
 
 DISPLAY_MENU PROC
 	MOV AH,09H	;
@@ -946,7 +1015,9 @@ INJECT_DD_STRING PROC
 	; MOV DX, "Higher DD here"		;DX:AX = 1234567
 	; MOV DI, OFFSET "string here"	;Location of the string you want to inject
 	; ADD DI, "index here"			;Index of the string to begin injecting
-	; CALL INJECT_DD_STRING
+	; CALL INJECT_DD_STRING			;
+	;-------------------------------;
+	
 	MOV CXX, CX
 	MOV CL, " "					;Empty space ready to replace extra 0
 	
@@ -997,12 +1068,13 @@ INJECT_DD_STRING PROC
 INJECT_DD_STRING ENDP
 
 INJECT_DW_STRING PROC
-	; We will zero out DX for you ;)
+	; We will zero out DX for you ;)	
 	;-------------------------------;Function call template
 	; MOV AX, "DW here"				;Value you want to display
 	; MOV DI, OFFSET "string here"	;Location of the string you want to inject
 	; ADD DI, "index here"			;Index of the string to begin injecting
-	; CALL INJECT_DW_STRING
+	; CALL INJECT_DW_STRING			;
+	;-------------------------------;
 	
 	MOV DX, 0
 	DIV HUNDRED					;AX = 345	;DX = 67
@@ -1027,7 +1099,6 @@ INJECT_DW_STRING PROC
 	
 	RET
 INJECT_DW_STRING ENDP
-
 
 CONTINUE PROC
 	CLOOP:
@@ -1077,10 +1148,6 @@ MAIN PROC
 	INT 21H		;
 	LEA DX,WLC3 ;   ===============
 	INT 21H		;
-	
-	; MOV TTL_HOUR_PAY , 0		;INITIALIZING TO ZERO
-	; MOV TTL_BIN_VALUE_AX, 0	;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
-	; MOV TTL_BIN_VALUE_DX, 0	;(08/Aug/2018)Not required since we now ask the user to confirm the last value
 	
 	SELECTMENU:	
 	CALL DISPLAY_MENU;
