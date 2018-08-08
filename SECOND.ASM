@@ -6,7 +6,9 @@
     ;The github repo serves as a proof that we made it oursleves
     ;Just refer to the list of commits and you'll see how we almost went insane
 
-	;Just a note, 	48 = 40H = "0"
+	;Just a note, 48 = 40H = "0"
+	;0DH = 13	, stands for carriage return, return to the beginning of the current line without advancing downward.
+	;0AH = 10	, stands for line feed, advance downward to the next line.
 	
 	NEWL DB 0DH,0AH,"$"
 	
@@ -74,7 +76,7 @@
 	MENU3IN1        DB 0DH,0AH,"   Enter Total Hour Pay  : $"
 	MENU3IN1_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID PAY"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
-	MENU3IN2        DB 0DH,0AH,"   Enter Total Bin Value : $"
+	MENU3IN2        DB 0DH,    "   Enter Total Bin Value : $"
     MENU3IN2_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID VALUE"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
    
@@ -153,6 +155,11 @@
 	HOUR_RATE		DB 7
 	TTL_HOUR		DB 0
 	TTL_HOUR_PAY	DW 0
+	
+	TTL_BIN_INPUT 	DW 0
+	; TTL_BIN_INPUT 			DB 7 DUP(0)
+	; TTL_BIN_INPUT_LENGTH 	DB
+	
 	
 	RESULTB	DB ?
 			DB ?
@@ -899,8 +906,54 @@ MENU3_INPUT_BIN_CONFIRMATION ENDP
 
 MENU3_INPUT_BIN_PROC PROC
 	
+	MENU3_INPUT_BIN_START:
+		CALL MENU3_INPUT_BIN_SE_PROC
+		
+		MOV AH, 09H
+		LEA DX, MENU3IN2
+		INT 21H
+		
+		MOV AH, 07H					;INPUT NO ECHO
+		INT 21H
+		
+		CMP AL, 13					;If enter key
+		JE	MENU3_INPUT_BIN_DONE
+		CMP AL, 8					;If backspace
+		JE	MENU3_INPUT_BIN_BACKSPACE
+		CMP AL, "0"					;If lower than "0"
+		JL	MENU3_INPUT_BIN_START
+		CMP AL, "9"					;If greater than "9"
+		JG	MENU3_INPUT_BIN_START
+		MOV AH, 0
+		SUB AL, "0"					;From char to int
+		MOV BX, AX					;Save for later as AX will get overwritten by the next statement
+		
+		MOV AX, TTL_BIN_INPUT		;Import from array
+		MOV DX, 0
+		MUL TENW				 	;Multiply by 10
+		
+		ADD AX, BX					;Add input value to (TTL_BIN_INPUT * 10)
+		MOV TTL_BIN_INPUT, AX		;Then update array
+		JMP MENU3_INPUT_BIN_START
+		
+	MENU3_INPUT_BIN_BACKSPACE:
+		MOV AX, TTL_BIN_INPUT		;Import from array
+		MOV DX, 0					
+		DIV TENW				 	;Divide by 10
+		
+		MOV TTL_BIN_INPUT, AX		;Then store it back to array
+		JMP MENU3_INPUT_BIN_START
+		
+	MENU3_INPUT_BIN_DONE:
 	RET
 MENU3_INPUT_BIN_PROC ENDP
+
+MENU3_INPUT_BIN_SE_PROC PROC
+	MOV AX, TTL_BIN_INPUT		;Import from array
+	
+	
+	RET
+MENU3_INPUT_BIN_SE_PROC ENDP
 
 DISPLAY_MENU PROC
 	MOV AH,09H	;
