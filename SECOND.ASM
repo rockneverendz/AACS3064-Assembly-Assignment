@@ -5,8 +5,8 @@
     ;https://github.com/rockneverendz/AACS3064-Assembly-Assignment
     ;The github repo serves as a proof that we made it oursleves
     ;Just refer to the list of commits and you'll see how we almost went insane
-    
-	;Test commit from SCY
+
+	;Just a note, 	48 = 40H = "0"
 	
 	NEWL DB 0DH,0AH,"$"
 	
@@ -54,7 +54,7 @@
 	MENU2RE2 DB 0DH,0AH,"  ",179," Day      ",179," Apple Picked  ",179," Bin "    ,179," Bin Rate ",179," Bin Value",179,"$"
 	MENU2RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,15 DUP (196)     ,197,5 DUP (196),197,10 DUP (196),197,10 DUP (196),180,"$"
 	MENU2REX DB                                                     179,"     "    ,179,"      .   ",179,"      .   ",179,"$"
-	MENU2REN DB                                    "              ",179,"   - "    ,179,"    --.-- ",179,"    --.-- ",179,"$"
+	MENU2REN DB                                    "              ",179,"   - "    ,179,"    --.-- ",179,"   ---.-- ",179,"$"
 	MENU2RE4 DB 0DH,0AH,"  ",198,10 DUP (205),216,15 DUP (205)     ,216,5 DUP (205),216,10 DUP (205),216,10 DUP (205),181,"$"
 	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"               ",179,"     "    ,179,"          ",179,"      .   ",179,"$"
 	MENU2RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,15 DUP (205)     ,207,5 DUP (205),207,10 DUP (205),207,10 DUP (205),190,"$"
@@ -120,6 +120,7 @@
 	BIN_VALUE_DX_PL DB 7 DUP(0)
 	BIN_VALUE_DX_PH DB 7 DUP(0)
 	
+	TTL_BIN				DB 0
 	TTL_BIN_VALUE_AX	DW 0
 	TTL_BIN_VALUE_DX	DW 0
 		
@@ -356,8 +357,7 @@ MENU1 PROC
 		MOV AH, 0
 		MOV AL, RESULTB[SI]
 		DIV TENB
-		ADD AL, "0"
-		ADD AH, "0"
+		ADD AX, 3030H		;ADD AL,"0"	;ADD AH,"0"
 		MOV DI, 42			;The location of the column 'Total Pay'
 		MOV MENU1REX[DI]  , AL
 		MOV MENU1REX[DI+1], AH
@@ -376,8 +376,7 @@ MENU1 PROC
 	MOV AL, TTL_HOUR	;AL = 23
 
 	DIV TENB			;AL = 2		;AH = 3
-	ADD AL, "0"
-	ADD AH, "0"
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
 	MOV DI, 23				;The location of the column 'Hours'
 	MOV MENU1RE5[DI]  , AL	;
 	MOV MENU1RE5[DI+1], AH	;
@@ -387,8 +386,7 @@ MENU1 PROC
 
 	DIV TENW				;AX = 34	;DX = 5
 	DIV TENB				;AL = 3		;AH = 4
-	ADD AL, "0"				;FROM INT TO CHAR
-	ADD AH, "0"				;FROM INT TO CHAR
+	ADD AX, 3030H			;ADD AL,"0"	;ADD AH,"0"
 	ADD DL, "0"				;FROM INT TO CHAR
 	MOV DI, 55				;The location of the column 'Total Pay'
 	MOV MENU1RE5[DI]  , AL	;
@@ -415,6 +413,7 @@ MENU2 PROC
 	INT 21H		;
 	LEA DX,NEWL	;
 	INT 21H		;
+	MOV TTL_BIN 		, 0
 	MOV TTL_BIN_VALUE_AX, 0 ;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
 	MOV TTL_BIN_VALUE_DX, 0 ;
 	
@@ -442,7 +441,14 @@ MENU2 PROC
 		CALL MENU2_REPORT_PROC  ;
 	LOOP MENU2_REPORT
 	
-	MOV AX, TTL_BIN_VALUE_AX	
+	MOV AH, 0
+	MOV AL, TTL_BIN
+	DIV TENB
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	MOV MENU2RE5[34], AL
+	MOV MENU2RE5[35], AH
+	
+	MOV AX, TTL_BIN_VALUE_AX	;INSERT TTL_BIN_VALUE INTO MENU2RE5 CHARACTER BY CHARACTER
 	MOV DX, TTL_BIN_VALUE_DX	;DX:AX = 1234567
 
 	DIV HUNDRED					;AX = 12345	;DX = 67
@@ -466,15 +472,13 @@ MENU2 PROC
 	
 	MOV AX, DX					;AL = 45	;AH = 0
 	DIV TENB					;AL = 4		;AH = 5
-	ADD AL, "0"
-	ADD AH, "0"
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
 	MOV MENU2RE5[53], AL		;	1234-.--
 	MOV MENU2RE5[54], AH		;	12345.--
 	
 	MOV AX, BX					;AL = 67	;AH = 0
 	DIV TENB					;AL = 6		;AH = 7
-	ADD AL, "0"
-	ADD AH, "0"
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
 	MOV MENU2RE5[56], AL		;	12345.6-
 	MOV MENU2RE5[57], AH		;	12345.67
 	
@@ -556,7 +560,8 @@ MENU2_INPUT_PROC PROC
 		JMP MENU2_INPUT_BIN	;
 	
 	MENU2_INPUT_BIN_VALID:
-		MOV BIN_VAR[SI], AL	;STORE IN 'BIN' 
+		MOV BIN_VAR[SI], AL	;STORE IN 'BIN'
+		ADD TTL_BIN, AL
         CALL MENU2_PROCESS_PROC
 		JMP INPUTM2_COMPLETE
 		
@@ -646,8 +651,7 @@ MENU2_REPORT_PROC PROC
 	
 	MOV AX, DX					;AL = 12	;AH = 0
 	DIV TENB					;AL = 1		;AH = 2
-	ADD AL, "0"
-	ADD AH, "0"
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
 	MOV MENU2REX[14], AL
 	MOV MENU2REX[15], AH
 	
@@ -671,15 +675,13 @@ MENU2_REPORT_PROC PROC
 	
 	MOV AH, 0
 	DIV TENB					;AH = 5		;AL = 1
-	ADD AH, "0"
-	ADD AL, "0"
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
 	MOV MENU2REX[21], AH		;	-554.--
 	MOV MENU2REX[20], AL		;	1554.--
 	
 	MOV AX, DX					;AX = 21
 	DIV TENB					;AH = 1		;AL = 2
-	ADD AL, "0"
-	ADD AH, "0"
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
 	MOV MENU2REX[25], AL		;	1554.2-
 	MOV MENU2REX[26], AH		;	1554.21
 	
@@ -777,8 +779,7 @@ DISPLAY_APPLE PROC
 		
 		MOV AX, DX					;AL = 12	;AH = 0
 		DIV TENB					;AL = 1		;AH = 2
-		ADD AL, "0"
-		ADD AH, "0"
+		ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
 		MOV APPLEX[DI+3], "."
 		MOV APPLEX[DI+4], AL
 		MOV APPLEX[DI+5], AH
