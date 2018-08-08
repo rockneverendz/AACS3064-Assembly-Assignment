@@ -32,9 +32,11 @@
 	CONT            DB 0DH,0AH,"   Continue? (Y/N) : $"
 	ERROR_CONT      DB         "Press any key to continue......$"
 	
+	;STRINGS FOR MENU1
 	MENU1IN         DB 0DH,0AH,"   Enter hour worked on $"
 	MENU1IN_ERROR   DB 0DH,0AH,20 DUP (" "),"INVALID INPUT > PLEASE ENTER A VALID NUMBER, 0 IF NONE"
                     DB 0DH,0AH,20 DUP (" "),"              > $" ;"Press anykey to continue"
+	
 	MENU1RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,10 DUP (196),194,11 DUP (196),194,20 DUP (196),180,"$"
 	MENU1RE2 DB 0DH,0AH,"  ",179," Day      ",179," Hours    ",179," Hour Rate ",179," Total Pay          ",179,"$"
 	MENU1RE3 DB 0DH,0AH,"  ",195,10 DUP (196),197,10 DUP (196),197,11 DUP (196),197,20 DUP (196)          ,180,"$"
@@ -43,6 +45,7 @@
 	MENU1RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"          ",179,"           ",179,"                    ",179,"$"
 	MENU1RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,10 DUP (205),207,11 DUP (205),207,20 DUP (205)          ,190,"$"
 	
+	;STRINGS FOR MENU2
 	MENU2IN1        DB 0DH,0AH,"   Select apple picked on $"
 	MENU2IN1_ERROR  DB 0DH,0AH,22 DUP (" "),"INVALID INPUT > ENTER INDEX OF THE APPLES, 0 IF NONE"
                     DB 0DH,0AH,22 DUP (" "),"              > $" ;"Press anykey to continue"
@@ -59,7 +62,28 @@
 	MENU2RE5 DB 0DH,0AH,"  ",179," TOTAL    ",179,"               ",179,"     "    ,179,"          ",179,"      .   ",179,"$"
 	MENU2RE6 DB 0DH,0AH,"  ",212,10 DUP (205),207,15 DUP (205)     ,207,5 DUP (205),207,10 DUP (205),207,10 DUP (205),190,"$"
 	
-	
+	;STRINGS FOR MENU3
+	MENU3CF_PAY_1	DB 0DH,0AH,"   Value of Total Hour Pay can be retrived from previous report.$"
+	MENU3CF_PAY_2	DB 0DH,0AH,"          Total Hour Pay :    .00$"
+    
+	MENU3CF_BIN_1	DB 0DH,0AH,"   Value of Total Bin Value can be retrived from previous report.$"
+	MENU3CF_BIN_2	DB 0DH,0AH,"         Total Bin Value :      .  $"
+    
+	MENU3CF_CONT	DB 0DH,0AH,"   Would you like to continue with this value? (Y/N) : $"
+    
+	MENU3IN1        DB 0DH,0AH,"   Enter Total Hour Pay  : $"
+	MENU3IN1_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID PAY"
+                    DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
+	MENU3IN2        DB 0DH,0AH,"   Enter Total Bin Value : $"
+    MENU3IN2_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID VALUE"
+                    DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
+   
+	MENU3RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,10 DUP (196),194,10 DUP (196),194,10 DUP (196),194,10 DUP (196),180,"$"
+	MENU3RE2 DB 0DH,0AH,"  ",179," Hour Pay ",179," Bin Val  ",179,"Comm. Rate",179,"Commission",179," Salary   ",179,"$"
+	MENU3RE3 DB 0DH,0AH,"  ",198,10 DUP (205),216,10 DUP (205),216,10 DUP (205),216,10 DUP (205),216,10 DUP (205),181,"$"
+	MENU3RE4 DB 0DH,0AH,"  ",179,"          ",179,"      .   ",179,"          ",179,"      .   ",179,"      .   ",179,"$"
+	MENU3RE5 DB 0DH,0AH,"  ",212,10 DUP (205),207,10 DUP (205),207,10 DUP (205),207,10 DUP (205),207,10 DUP (205),190,"$"
+
 	INDENT	 DB 0DH,0AH,"  ",179,"$"
 	INDENTX	 DB 0DH,0AH,"  ",179,"0",179," ","$"	;Same with INDENT but with indeX, get it? xD (Only used in DISPLAY_APPLE)
 
@@ -68,13 +92,15 @@
 	APPLE3 	 DB 0DH,0AH,"  ",195,196,197,26 DUP (196)                ,197,25 DUP (196)               ,180,"$"
 	APPLEX	 DB                                         "           ",179,"                         ",179,"$"
 	APPLE4	 DB 0DH,0AH,"  ",192,196,193,26 DUP (196)                ,193,25 DUP (196)               ,217,"$"
-	
-	;┌─┬┐	;218	;196	;194	;191		
-	;│ ││	;179			;179	;179
-	;├─┼┤	;195	;196	;197	;180
-	;└─┴┘	;192	;196	;193	;217
-	
-	
+
+	;https://en.wikipedia.org/wiki/Code_page_437 for more box drawing characters	
+	;┌─┬┐	218	196	194	191
+	;│ ││	179		179	179
+	;├─┼┤	195	196	197	180
+	;└─┴┘	192	196	193	217
+	;╞═╪╡	198	205	216	181
+	;╘═╧╛	212	205	207	190	
+
 	DAY DB "Monday   $"	;Array of strings of days
 		DB "Tuesday  $" ;10 CHARACTER
 		DB "Wednesday$"
@@ -123,7 +149,11 @@
 	TTL_BIN				DB 0
 	TTL_BIN_VALUE_AX	DW 0
 	TTL_BIN_VALUE_DX	DW 0
-		
+	
+	HOUR_RATE		DB 7
+	TTL_HOUR		DB 0
+	TTL_HOUR_PAY	DW 0
+	
 	RESULTB	DB ?
 			DB ?
 			DB ?
@@ -137,11 +167,7 @@
 			DW 456
 			DW 567
 			DW 678
-			DW 789		
-	DISREST DB ?
-			DB ?
-			DB ?
-	
+			DW 789
 
 	SPACE	DB " ",179,"       $"
 	COLON	DB " : $"
@@ -152,16 +178,11 @@
 	ONETHOU DW  1000
 	HUNDRED DW   100
 	TENB 	DB 	  10
-	TENW 	DW    10
-	
+	TENW 	DW    10 
 	
 	PASSWRD DB "password$"
 	PASS_IN	DB 9 DUP (?)
 	INPUT	DB ?
-	
-	HOUR_RATE		DB 7
-	TTL_HOUR		DB 0
-	TTL_HOUR_PAY	DW 0
 	
 	AXX DW ?
 	CXX DW ?	;
@@ -373,13 +394,12 @@ MENU1 PROC
 	INT 21H
 	
 	MOV AH,	0
-	MOV AL, TTL_HOUR	;AL = 23
+	MOV AL, TTL_HOUR		;AL = 23
 
-	DIV TENB			;AL = 2		;AH = 3
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	MOV DI, 23				;The location of the column 'Hours'
-	MOV MENU1RE5[DI]  , AL	;
-	MOV MENU1RE5[DI+1], AH	;
+	DIV TENB				;AL = 2		;AH = 3
+	ADD AX, 3030H			;ADD AL,"0"	;ADD AH,"0"
+	MOV MENU1RE5[23]  , AL	;The location of the column 'Hours'
+	MOV MENU1RE5[24], AH	;
 
 	MOV DX, 0				;DX = 0
 	MOV AX, TTL_HOUR_PAY	;AX = 345
@@ -387,11 +407,10 @@ MENU1 PROC
 	DIV TENW				;AX = 34	;DX = 5
 	DIV TENB				;AL = 3		;AH = 4
 	ADD AX, 3030H			;ADD AL,"0"	;ADD AH,"0"
-	ADD DL, "0"				;FROM INT TO CHAR
-	MOV DI, 55				;The location of the column 'Total Pay'
-	MOV MENU1RE5[DI]  , AL	;
-	MOV MENU1RE5[DI+1], AH	;
-	MOV MENU1RE5[DI+2], DL
+	ADD DL, 30H				;ADD DL,"0"
+	MOV MENU1RE5[55], AL	;The location of the column 'Total Pay'
+	MOV MENU1RE5[56], AH	
+	MOV MENU1RE5[57], DL
 	
 	MOV AH,09H
 	LEA DX, MENU1RE5
@@ -586,7 +605,7 @@ MENU2_PROCESS_PROC PROC
 	MOV [BX], AX
 	
 	MOV BH, BIN_VALUE_DX_PH[SI]	;Moving DX to BIN_VALUE_DX
-	MOV BL, BIN_VALUE_DX_PL[SI]	;120 484
+	MOV BL, BIN_VALUE_DX_PL[SI]
 	MOV [BX], DX
 	
 	ADD TTL_BIN_VALUE_AX, AX	;Adding AX to TTL_BIN_VALUE_AX
@@ -597,24 +616,24 @@ MENU2_PROCESS_PROC ENDP
 
 MENU2_REPORT_PROC PROC
 		
-	MOV AH, 09H	        ;STRING
-	LEA DX, INDENT      ;INDENT
+	MOV AH, 09H	        		;STRING
+	LEA DX, INDENT      		;INDENT
 	INT 21H
-	MOV DH, DAYPH[SI]	;RETRIVE POINTER OF DAY FROM AN ARRAY
+	MOV DH, DAYPH[SI]			;Retrive pointer of day from an array
 	MOV DL, DAYPL[SI]
 	INT 21H	
 		
-	LEA DX, LINE		;A line
+	LEA DX, LINE				;A vertical dividor, like modulus but longer
 	INT 21H
 		
-	MOV BH, 0			;The apple name which user selected
+	MOV BH, 0					;The apple name which user selected
 	MOV BL, APPLE_VAR[SI]
-	CMP BL, BH			;CHECK IF IT'S NULL, 0 IS NOT NULL
-	JL  MENU2_REPORT_NULL   ;-1 < 0, THUS WE CAN CONCULDE IF IT'S NULL
+	CMP BL, BH					;CHECK IF IT'S NULL, 0 IS NOT NULL
+	JL  MENU2_REPORT_NULL  		;-1 < 0, THUS WE CAN CONCULDE IF IT'S NULL
 	JMP MENU2_REPORT_NOT_NULL
     
     MENU2_REPORT_NULL:
-        LEA DX,MENU2REN
+        LEA DX,MENU2REN			;Print out a preset NULL record, the one with dashes.
         INT 21H
         JMP MENU2_REPORT_NEXT
     
@@ -702,15 +721,188 @@ MENU3 PROC
 	INT 21H		;
 	LEA DX,MEN8 ;	============================
 	INT 21H		;
-	LEA DX,NEWL	;
-	INT 21H		;
 	
+	; if(TTL_HOUR_PAY == 0){
+	; 	"Please enter pay"
+	; }
+	; else{
+	; 	"Previous pay found, pay = 123.00"
+	; 	"would you like to use this pay?"		
+	; 	if(false){
+	; 		"Please enter pay value"
+	; 	}
+	; }
+	
+	; if(TTL_BIN_VALUE_AX = 0 && TTL_BIN_VAL = 0){
+	;	 "Please enter bin value"	
+	; }
+	; else{
+	; 	"Previous bin value found, pay = 12345.67"
+	; 	"would you like to use this bin value?"
+	; 	if(false){
+	; 		"Please enter bin value"
+	; 	}
+	; }
+	
+	CMP TTL_HOUR_PAY, 0					
+	JE  MENU3_INPUT_PAY_NULL			;if TTL_HOUR_PAY == 0, ask the user to enter it
+	
+	CALL MENU3_INPUT_PAY_CONFIRMATION	;if TTL_HOUR_PAY != 0, ask the user if they want to continue with the value
+	CMP AL, "Y"							;if user chose "Yes, continue with this value",
+	JE	MENU3_NEXT_INPUT				;jump to the next input, else get value
+	
+	MENU3_INPUT_PAY_NULL:				
+	CALL MENU3_INPUT_PAY_PROC
+	
+	MENU3_NEXT_INPUT:
+	MOV AX, TTL_BIN_VALUE_AX			;Check if it's 0 in both variable
+	ADD AX, TTL_BIN_VALUE_DX            ;0 + 0 = 0 = NULL
+	CMP AX, 0
+	JE MENU3_INPUT_BIN_NULL				;if TTL_HOUR_PAY     == 0, ask the user to enter it
+	
+	CALL MENU3_INPUT_BIN_CONFIRMATION	;if AX != 0, ask the user if they want to continue with the value
+	CMP AL, "Y"							;if user chose "Yes, continue with this value",
+	JE	MENU3_NEXT_INPUT				;jump to processing, else get value
+	
+	MENU3_INPUT_BIN_NULL:
+	CALL MENU3_INPUT_BIN_PROC			
+	JMP MENU3_DONE_INPUT
+	
+	
+	MENU3_DONE_INPUT:
+	MOV AH,09H		;
+	LEA DX,MEN1 	;	============================
+	INT 21H			;
+	LEA DX,MEN6 	;	"3. Employee's Weekly Salary$"
+	INT 21H			;
+	LEA DX,MENU3RE1	;
+	INT 21H		;
+	LEA DX,MENU3RE2	;
+	INT 21H		;
+	LEA DX,MENU3RE3	;
+	INT 21H		;
+	LEA DX,MENU3RE4	;
+	INT 21H		;
+	LEA DX,MENU3RE5	;
+	INT 21H		;
 	
 	RET
 MENU3 ENDP
 
+MENU3_INPUT_PAY_CONFIRMATION PROC
+	MOV DX, 0					;DX = 0
+	MOV AX, TTL_HOUR_PAY		;AX = 345
+
+	DIV TENW					;AX = 34	;DX = 5
+	DIV TENB					;AL = 3		;AH = 4
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	ADD DL, 30H					;ADD DL,"0"
+	MOV MENU3CF_PAY_2[29], AL	;The location of the column 'Total Pay'
+	MOV MENU3CF_PAY_2[30], AH	;
+	MOV MENU3CF_PAY_2[31], DL	;
+	
+	MENU3_INPUT_PAY_CF_PROMPT:
+	MOV AH,09H
+	LEA DX,MENU3CF_PAY_1
+	INT 21H
+	LEA DX,MENU3CF_PAY_2
+	INT 21H
+	LEA DX,MENU3CF_CONT
+	INT 21H	
+	
+	MOV AH,01H	;INPUT CHAR
+	INT 21H		;
+	
+	CMP AL, "Y"
+	JE	MENU3_INPUT_PAY_CF_VALID
+	CMP AL, "y"
+	JE	MENU3_INPUT_PAY_CF_VALID_EDIT	;UNDERSTAND INPUT BUT CAPITALIZE "n"
+	CMP AL, "N"
+	JE	MENU3_INPUT_PAY_CF_VALID
+	CMP AL, "n"
+	JE	MENU3_INPUT_PAY_CF_VALID	
+	JMP MENU3_INPUT_PAY_CF_PROMPT	;DOENS'T UNDERSTAND INPUT, RE-PROMPT
+	
+	MENU3_INPUT_PAY_CF_VALID_EDIT:
+	MOV AL, "Y"
+	MENU3_INPUT_PAY_CF_VALID:
+	RET
+MENU3_INPUT_PAY_CONFIRMATION ENDP
+
+MENU3_INPUT_PAY_PROC PROC
+	
+	RET
+MENU3_INPUT_PAY_PROC ENDP
+
+MENU3_INPUT_BIN_CONFIRMATION PROC
+	MOV AX, TTL_BIN_VALUE_AX	;INSERT TTL_BIN_VALUE INTO MENU2RE5 CHARACTER BY CHARACTER
+	MOV DX, TTL_BIN_VALUE_DX	;DX:AX = 1234567
+
+	DIV HUNDRED					;AX = 12345	;DX = 67
+	MOV BX, DX					;Save for later, since DX will be overwritten by the next divide
+	MOV DX, 0
+	DIV TENTHOU					;AX = 1		;DX = 2345
+	ADD AL, "0"
+	MOV MENU3CF_BIN_2[29], AL		;	1----.--
+		
+	MOV AX, DX					;AX = 2345	;DX = 0
+	MOV DX, 0
+	DIV ONETHOU					;AX = 2		;DX = 345
+	ADD AL, "0"
+	MOV MENU3CF_BIN_2[30], AL		;	12---.--
+
+	MOV AX, DX					;AX = 345	;DX = 0
+	MOV DX, 0
+	DIV HUNDRED					;AX = 3		;DX = 45
+	ADD AL, "0"
+	MOV MENU3CF_BIN_2[31], AL		;	123--.--
+	
+	MOV AX, DX					;AL = 45	;AH = 0
+	DIV TENB					;AL = 4		;AH = 5
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	MOV MENU3CF_BIN_2[32], AL		;	1234-.--
+	MOV MENU3CF_BIN_2[33], AH		;	12345.--
+	
+	MOV AX, BX					;AL = 67	;AH = 0
+	DIV TENB					;AL = 6		;AH = 7
+	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
+	MOV MENU3CF_BIN_2[35], AL		;	12345.6-
+	MOV MENU3CF_BIN_2[36], AH		;	12345.67
+	
+	MENU3_INPUT_BIN_CF_PROMPT:
+	MOV AH,09H
+	LEA DX,MENU3CF_BIN_1
+	INT 21H
+	LEA DX,MENU3CF_BIN_2
+	INT 21H
+	LEA DX,MENU3CF_CONT
+	INT 21H	
+	
+	MOV AH,01H	;INPUT CHAR
+	INT 21H		;
+	
+	CMP AL, "Y"
+	JE	MENU3_INPUT_BIN_CF_VALID
+	CMP AL, "y"
+	JE	MENU3_INPUT_BIN_CF_VALID_EDIT	;UNDERSTAND INPUT BUT CAPITALIZE "n"
+	CMP AL, "N"
+	JE	MENU3_INPUT_BIN_CF_VALID
+	CMP AL, "n"
+	JE	MENU3_INPUT_BIN_CF_VALID	
+	JMP MENU3_INPUT_BIN_CF_PROMPT	;DOENS'T UNDERSTAND INPUT, RE-PROMPT
+	
+	MENU3_INPUT_BIN_CF_VALID_EDIT:
+	MOV AL, "Y"
+	MENU3_INPUT_BIN_CF_VALID:
+	RET
+MENU3_INPUT_BIN_CONFIRMATION ENDP
+
+MENU3_INPUT_BIN_PROC PROC
+	
+	RET
+MENU3_INPUT_BIN_PROC ENDP
+
 DISPLAY_MENU PROC
-	;MENU
 	MOV AH,09H	;
 	LEA DX,MEN1 ;
 	INT 21H		;
@@ -820,7 +1012,6 @@ CONTINUE PROC
 	INT 21H		;
 				;
 	MOV AH,01H	;INPUT CHAR
-	MOV DL,INPUT;
 	INT 21H		;
 	
 	CMP AL, "Y"
@@ -830,7 +1021,7 @@ CONTINUE PROC
 	CMP AL, "N"
 	JE	CEND
 	CMP AL, "n"
-	JE	CEND_E_N;UNDERSTAND INPUT BUT CAPITALIZE n
+	JE	CEND_E_N;UNDERSTAND INPUT BUT CAPITALIZE "n"
 	
 	JMP CLOOP	;DOENS'T UNDERSTAND INPUT, RE-PROMPT
 	
@@ -863,9 +1054,9 @@ MAIN PROC
 	LEA DX,WLC3 ;   ===============
 	INT 21H		;
 	
-	MOV TTL_HOUR_PAY , 0	;INITIALIZING TO ZERO
-	MOV TTL_BIN_VALUE_AX, 0	;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
-	MOV TTL_BIN_VALUE_DX, 0	;
+	; MOV TTL_HOUR_PAY , 0		;INITIALIZING TO ZERO
+	; MOV TTL_BIN_VALUE_AX, 0	;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
+	; MOV TTL_BIN_VALUE_DX, 0	;(08/Aug/2018)Not required since we now ask the user to confirm the last value
 	
 	SELECTMENU:	
 	CALL DISPLAY_MENU;
