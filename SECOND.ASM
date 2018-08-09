@@ -188,9 +188,10 @@
 	
 	PASSWRD DB "password$"
 	PASS_IN	DB 9 DUP (?)
-	INPUT	DB ?
 	
+	INPUT	DW ?
 	AXX DW ?
+	AHH	DB ?
 	CXX DW ?	;
 	SII DW ?	;
 	DII DW ?
@@ -886,46 +887,42 @@ MENU3_INPUT_BIN_PROC PROC
 		JL	MENU3_INPUT_BIN_START
 		CMP AL, "9"					;If greater than "9"
 		JG	MENU3_INPUT_BIN_START
-		MOV AH, 0
-		SUB AL, "0"					;From char to int
+		CMP TTL_BIN_VALUE_DX, 0097H	;IF OVERLOADED
+		JG	MENU3_INPUT_BIN_START	
 		
-		MOV AXX, AX					;Save for later as AX will get overwritten by the next statement
+		MOV AH, 0					;Input valid and not overloaded
+		SUB AL, "0"					;From char to int
+		MOV INPUT, AX				;Save for later as AX will get overwritten by the next statement
 		
 		MOV DX, 0
 		MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
 		MUL TENW				 	;Multiply by 10
-		MOV BX, AX					
-		MOV CX, DX					;CARRY OF AX
 		
-		MOV DX, 0
+		ADD AX, INPUT
+		MOV TTL_BIN_VALUE_AX, AX
+		MOV AXX, DX
+		
 		MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
-		MUL TENW				 	;Multiply by 10
-		ADD AX, CX					;ADD CARRY OF AX TO AX(DX)
-		
-		ADD BX, AXX
-		ADC AX, 0
-		
-		MOV TTL_BIN_VALUE_AX, BX 	;Then update array
-		MOV TTL_BIN_VALUE_DX, AX
+		MUL TENB				 	;Multiply by 10
+		ADD AX, AXX					;ADD CARRY OF AX TO AX(DX)
+		MOV AH, 0
+		MOV TTL_BIN_VALUE_DX, AX	;Then update array
 		
 		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_BACKSPACE:
 		MOV AX, TTL_BIN_VALUE_DX	;Value to divide
-		MOV DX, 0
-		DIV TENW				 	;Divide by 10
+		DIV TENB				 	;Divide by 10
+		MOV AHH, AH
+		MOV AH, 0
+		MOV TTL_BIN_VALUE_DX, AX
 		
-		MOV CX, AX					;Move qoutient to CX
-		MOV BX, DX					;Move remainder to BX
-		
-		MOV AX, TTL_BIN_VALUE_AX	
-		MOV DX, BX					;Move remainder to DX
+		MOV AX, TTL_BIN_VALUE_AX
+		MOV DL, 0
+		MOV DH, AHH					;Move remainder to DX
 		DIV TENW
 		
-		ADD DX, CX					;Add qoutient to DX
-		
-		MOV TTL_BIN_VALUE_AX, DX
-		MOV TTL_BIN_VALUE_DX, AX 	;Then update array
+		MOV TTL_BIN_VALUE_AX, AX 	;Then update array
 		
 		JMP MENU3_INPUT_BIN_START
 		
