@@ -76,7 +76,7 @@
 	MENU3IN1        DB 0DH,    "   Enter Total Hour Pay  :[   .  ]$"
 	MENU3IN1_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID PAY"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
-	MENU3IN2        DB 0DH,    "   Enter Total Bin Value :[     .  ]$"
+	MENU3IN2        DB 0DH,    "   Enter Total Bin Value :[   .  ]$"
     MENU3IN2_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID VALUE"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
    
@@ -866,10 +866,9 @@ MENU3_INPUT_BIN_PROC PROC
 	
 	MENU3_INPUT_BIN_START:
 		MOV AX, TTL_BIN_VALUE_AX	;Value you want to display
-		MOV DX, TTL_BIN_VALUE_DX	
 		MOV DI, OFFSET MENU3IN2		;Location of the string you want to inject
 		ADD DI, 28					;Index of the string to begin injecting
-		CALL INJECT_DD_STRING
+		CALL INJECT_DW_STRING
 		
 		MOV AH, 09H
 		LEA DX, MENU3IN2
@@ -877,7 +876,6 @@ MENU3_INPUT_BIN_PROC PROC
 		
 		MOV AH, 07H					;INPUT NO ECHO
 		INT 21H
-		
 		CMP AL, 13					;If enter key
 		JE	MENU3_INPUT_BIN_DONE
 		CMP AL, 8					;If backspace
@@ -888,46 +886,23 @@ MENU3_INPUT_BIN_PROC PROC
 		JG	MENU3_INPUT_BIN_START
 		MOV AH, 0
 		SUB AL, "0"					;From char to int
+		MOV BX, AX					;Save for later as AX will get overwritten by the next statement
 		
-		MOV AXX, AX					;Save for later as AX will get overwritten by the next statement
-		
+		MOV AX, TTL_BIN_VALUE_AX	;Import from var
 		MOV DX, 0
-		MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
 		MUL TENW				 	;Multiply by 10
-		MOV BX, AX					
-		MOV CX, DX					;CARRY OF AX
 		
-		MOV DX, 0
-		MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
-		MUL TENW				 	;Multiply by 10
-		ADD AX, CX					;ADD CARRY OF AX TO AX(DX)
-		
-		ADD BX, AXX
-		ADC AX, 0
-		
-		MOV TTL_BIN_VALUE_AX, BX 	;Then update array
-		MOV TTL_BIN_VALUE_DX, AX
-		
+		ADD AX, BX					;Add input value to (TTL_BIN_VALUE_AX * 10)
+		MOV TTL_BIN_VALUE_AX, AX	;Then update var
 		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_BACKSPACE:
-		MOV AX, TTL_BIN_VALUE_DX	;Value to divide
-		MOV DX, 0
+		MOV AX, TTL_BIN_VALUE_AX	;Import from var
+		MOV DX, 0					
 		DIV TENW				 	;Divide by 10
 		
-		MOV CX, AX					;Move qoutient to CX
-		MOV BX, DX					;Move remainder to BX
-		
-		MOV AX, TTL_BIN_VALUE_AX	
-		MOV DX, BX					;Move remainder to DX
-		DIV TENW
-		
-		ADD DX, CX					;Add qoutient to DX
-		
-		MOV TTL_BIN_VALUE_AX, DX
-		MOV TTL_BIN_VALUE_DX, AX 	;Then update array
-		
-		JMP MENU3_INPUT_BIN_START
+		MOV TTL_HOUR_PAY, AX		;Then store it back to var
+		JMP MENU3_INPUT_PAY_START
 		
 	MENU3_INPUT_BIN_DONE:
 	RET
