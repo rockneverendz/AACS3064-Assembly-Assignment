@@ -1,7 +1,13 @@
 .MODEL SMALL
 .STACK 100
 .DATA
-    ;Link below is the github repo of this project
+	;AACS3064 COMPUTER SYSTEMS ARCHITECTURE
+    
+	;VerniyLust 	(Brendan Chew Jian Wen	)	[Pointers		, Address			]
+	;Shiina 		(Chia Wei Xiang			)	[Display Table	, String Injecting	]
+	;Scrum Master 	(Soo Cia Yang			)	[Function Calls	, 5 Digit Input		]
+	
+	;Link below is the github repo of this project
     ;https://github.com/rockneverendz/AACS3064-Assembly-Assignment
     ;The github repo serves as a proof that we made it oursleves
     ;Just refer to the list of commits and you'll see how we almost went insane
