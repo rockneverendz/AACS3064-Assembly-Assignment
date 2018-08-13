@@ -82,7 +82,7 @@
 	MENU3IN1        DB 0DH,    "   Enter Total Hour Pay  :  [   .  ]$"
 	MENU3IN1_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID PAY"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
-	MENU3IN2        DB 0DH,    "   Enter Total Bin Value :  [   .  ]$"
+	MENU3IN2        DB 0DH,    "   Enter Total Bin Value :[     .  ]$"
     MENU3IN2_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID VALUE"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
    
@@ -865,10 +865,11 @@ MENU3_INPUT_BIN_PROC PROC
 	INT 21H
 	
 	MENU3_INPUT_BIN_START:
+		MOV DX, TTL_BIN_VALUE_DX
 		MOV AX, TTL_BIN_VALUE_AX	;Value you want to display
 		MOV DI, OFFSET MENU3IN2		;Location of the string you want to inject
-		ADD DI, 30					;Index of the string to begin injecting
-		CALL INJECT_DW_STRING
+		ADD DI, 28					;Index of the string to begin injecting
+		CALL INJECT_DD_STRING
 		
 		MOV AH, 09H
 		LEA DX, MENU3IN2
@@ -905,9 +906,6 @@ MENU3_INPUT_BIN_PROC PROC
 		MOV AH, 0
 		MOV TTL_BIN_VALUE_DX, AX	;Then update array
 
-		
-		ADD AX, BX					;Add input value to (TTL_BIN_VALUE_AX * 10)
-		MOV TTL_BIN_VALUE_AX, AX	;Then update var
 		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_BACKSPACE:
