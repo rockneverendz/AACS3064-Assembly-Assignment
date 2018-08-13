@@ -161,24 +161,19 @@
 	HOUR_RATE		DB 7
 	TTL_HOUR		DB 0
 	TTL_HOUR_PAY	DW 0
+	COMM_RATE		DW 8
+	COMM_VALUE_AX	DW 0
+	COMM_VALUE_DX	DW 0
 	
-	TTL_BIN_INPUT 	DW 0
-		
+	
 	RESULTB	DB ?
 			DB ?
 			DB ?
 			DB ?
 			DB ?
 			DB ?
-			DB 78
-	RESULTW	DW 123
-			DW 234
-			DW 345
-			DW 456
-			DW 567
-			DW 678
-			DW 789
-
+			DB ?
+			
 	SPACE	DB " ",179,"       $"
 	COLON	DB " : $"
 	LINE	DB " ",179," $"
@@ -187,9 +182,9 @@
 	TENTHOU DW 10000
 	ONETHOU DW  1000
 	HUNDRED DW   100
+	HUNDREB DB   100
 	TENB 	DB 	  10
-	TENW 	DW    10 
-	TEND	DD    10
+	TENW 	DW    10
 	NULL	DB " "
 	
 	PASSWRD DB "password$"
@@ -798,12 +793,15 @@ MENU3_INPUT_PAY_PROC PROC
 		JL	MENU3_INPUT_PAY_START
 		CMP AL, "9"					;If greater than "9"
 		JG	MENU3_INPUT_PAY_START
+		CMP TTL_HOUR_PAY, 6553		;IF OVERLOADED
+		JGE	MENU3_INPUT_PAY_OVERFLOW	
+		
 		MOV AH, 0
 		SUB AL, "0"					;From char to int
 		MOV BX, AX					;Save for later as AX will get overwritten by the next statement
 		
-		MOV AX, TTL_HOUR_PAY		;Import from var
 		MOV DX, 0
+		MOV AX, TTL_HOUR_PAY		;Import from var
 		MUL TENW				 	;Multiply by 10
 		
 		ADD AX, BX					;Add input value to (TTL_HOUR_PAY * 10)
@@ -816,6 +814,10 @@ MENU3_INPUT_PAY_PROC PROC
 		DIV TENW				 	;Divide by 10
 		
 		MOV TTL_HOUR_PAY, AX		;Then store it back to var
+		JMP MENU3_INPUT_PAY_START
+	
+	MENU3_INPUT_PAY_OVERFLOW:		;Doesn't work idk why
+		MOV TTL_HOUR_PAY, 65430		;Just give them max possible value
 		JMP MENU3_INPUT_PAY_START
 		
 	MENU3_INPUT_PAY_DONE:
@@ -890,13 +892,13 @@ MENU3_INPUT_BIN_PROC PROC
 		
 		MOV AH, 0					;Input valid and not overloaded
 		SUB AL, "0"					;From char to int
-		MOV INPUT, AX				;Save for later as AX will get overwritten by the next statement
+		MOV BX, AX				;Save for later as AX will get overwritten by the next statement
 		
 		MOV DX, 0
 		MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
 		MUL TENW				 	;Multiply by 10
 		
-		ADD AX, INPUT
+		ADD AX, BX
 		MOV TTL_BIN_VALUE_AX, AX
 		MOV AXX, DX
 		
@@ -911,7 +913,7 @@ MENU3_INPUT_BIN_PROC PROC
 	MENU3_INPUT_BIN_BACKSPACE:
 		MOV AX, TTL_BIN_VALUE_DX	;Value to divide
 		DIV TENB				 	;Divide by 10
-		MOV AHH, AH
+		MOV AHH, AH					;HOLD REMAINDER FOR LATER DIV
 		MOV AH, 0
 		MOV TTL_BIN_VALUE_DX, AX
 		
@@ -954,6 +956,64 @@ MENU3_REPORT_PROC PROC
 	ADD DI, 17						;Index of the string to begin injecting
 	CALL INJECT_DD_STRING			;
 	
+	; MOV DX, 0
+	; MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
+	; MUL COMM_RATE				;Multiply by 8
+	
+	; MOV BX, AX					;DX:AX TO CX:BX
+	; MOV AXX, DX					;
+	
+	; MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
+	; MUL COMM_RATE			 	;Multiply by 10
+	; ADD AX, AXX					;ADD CARRY OF AX TO AX(DX)
+	
+	; MOV DX, 0
+	; DIV HUNDRED
+	; MOV AHH, DL					;HOLD REMAINDER FOR LATER DIV
+	; MOV COMM_VALUE_DX, AX
+	
+	; MOV AX, BX
+	; MOV DH, 0
+	; MOV DL, AHH					;Move remainder to DX
+	; DIV TENW
+	; MOV COMM_VALUE_AX, AX 	;Then update array
+	
+	;multiply 8 
+	
+	MOV DX, 0
+	MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
+	MUL COMM_RATE				;Multiply by 10
+	
+	MOV COMM_VALUE_AX, AX
+	MOV AXX, DX
+	
+	MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
+	MUL COMM_RATE			 	;Multiply by 10
+	ADD AX, AXX					;ADD CARRY OF AX TO AX(DX)
+	MOV COMM_VALUE_DX, AX		;Then update array
+
+	;divide 100 ;largest possible value from above is 018FFCE0
+	
+	MOV AX, COMM_VALUE_DX	;Value to divide
+	DIV HUNDREB				 	;Divide by 10
+	MOV AHH, AH					;HOLD REMAINDER FOR LATER DIV
+	MOV AH, 0
+	MOV COMM_VALUE_DX, AX
+	
+	MOV AX, COMM_VALUE_AX
+	MOV DH, 0
+	MOV DL, AHH					;Move remainder to DX
+	DIV HUNDRED
+	
+	MOV COMM_VALUE_AX, AX 	;Then update array
+	
+	
+	MOV AX, COMM_VALUE_AX		;Value you want to display
+	MOV DX, COMM_VALUE_DX		;DX:AX = 1234567
+	MOV DI, OFFSET MENU3RE4		;Location of the string you want to inject
+	ADD DI, 39					;Index of the string to begin injecting
+	CALL INJECT_DD_STRING		
+
 	
 	
 	RET
