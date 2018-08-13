@@ -72,24 +72,24 @@
 	
 	;STRINGS FOR MENU3
 	MENU3CF_PAY_1	DB 0DH,0AH,"   Value of Total Hour Pay can be retrived from previous report.$"
-	MENU3CF_PAY_2	DB 0DH,0AH,"          Total Hour Pay :    .00$"
+	MENU3CF_PAY_2	DB 0DH,0AH,"          Total Hour Pay :      .  $"
     
 	MENU3CF_BIN_1	DB 0DH,0AH,"   Value of Total Bin Value can be retrived from previous report.$"
 	MENU3CF_BIN_2	DB 0DH,0AH,"         Total Bin Value :      .  $"
     
 	MENU3CF_CONT	DB 0DH,0AH,"   Would you like to continue with this value? (Y/N) : $"
     
-	MENU3IN1        DB 0DH,    "   Enter Total Hour Pay  :[   .  ]$"
+	MENU3IN1        DB 0DH,    "   Enter Total Hour Pay  :  [   .  ]$"
 	MENU3IN1_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID PAY"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
-	MENU3IN2        DB 0DH,    "   Enter Total Bin Value :[   .  ]$"
+	MENU3IN2        DB 0DH,    "   Enter Total Bin Value :  [   .  ]$"
     MENU3IN2_ERROR  DB 0DH,0AH,"           INVALID INPUT > PLEASE ENTER A VALID VALUE"
                     DB 0DH,0AH,"                         > $" ;"Press anykey to continue"
    
 	MENU3RE1 DB 0DH,0AH,"  ",195,196,193,8 DUP (196),194,10 DUP (196),194,10 DUP (196),194,10 DUP (196),194,10 DUP (196),180,"$"
 	MENU3RE2 DB 0DH,0AH,"  ",179," Hour Pay ",179," Bin Val  ",179,"Comm. Rate",179,"Commission",179," Salary   ",179,"$"
 	MENU3RE3 DB 0DH,0AH,"  ",198,10 DUP (205),216,10 DUP (205),216,10 DUP (205),216,10 DUP (205),216,10 DUP (205),181,"$"
-	MENU3RE4 DB 0DH,0AH,"  ",179,"          ",179,"      .   ",179,"          ",179,"      .   ",179,"      .   ",179,"$"
+	MENU3RE4 DB 0DH,0AH,"  ",179,"      .   ",179,"      .   ",179,"          ",179,"      .   ",179,"      .   ",179,"$"
 	MENU3RE5 DB 0DH,0AH,"  ",212,10 DUP (205),207,10 DUP (205),207,10 DUP (205),207,10 DUP (205),207,10 DUP (205),190,"$"
 
 	INDENT	 DB 0DH,0AH,"  ",179,"$"
@@ -314,6 +314,7 @@ MENU1 PROC
 	LEA DX,NEWL	;
 	INT 21H		;
 	MOV TTL_HOUR, 0 ;OVERWRTIE PREVIOUS DATA (IF THERE IS ANY)
+	MOV TTL_HOUR_PAY, 0
 	
 	MOV CX,7	;7 DAYS A WEEK
 	MOV SI,0
@@ -397,11 +398,11 @@ MENU1 PROC
 		MOV MENU1REX[39], AL;The location of the column 'Total Pay'
 		MOV MENU1REX[40], AH
 		
-		MOV AH,09H	;
-		LEA DX,MENU1REX;INDENT
+		MOV AH,09H
+		LEA DX,MENU1REX
 		INT 21H
 		
-		INC SI		;
+		INC SI
 	LOOP MENU1_REPORT
 	
 	LEA DX, MENU1RE4
@@ -415,17 +416,13 @@ MENU1 PROC
 	MOV MENU1RE5[23], AL	;The location of the column 'Hours'
 	MOV MENU1RE5[24], AH	;
 
-	MOV DX, 0				;DX = 0
 	MOV AX, TTL_HOUR_PAY	;AX = 345
+	MUL HUNDRED				;AX = 34500 ;MAX AX can hold is 65535
+	MOV TTL_HOUR_PAY, AX
+	MOV DI, OFFSET MENU1RE5	;Location of the string you want to inject
+	ADD DI, 52				;Index of the string to begin injecting
+	CALL INJECT_DW_STRING
 
-	DIV TENW				;AX = 34	;DX = 5
-	DIV TENB				;AL = 3		;AH = 4
-	ADD AX, 3030H			;ADD AL,"0"	;ADD AH,"0"
-	ADD DL, 30H				;ADD DL,"0"
-	MOV MENU1RE5[52], AL	;The location of the column 'Total Pay'
-	MOV MENU1RE5[53], AH	
-	MOV MENU1RE5[54], DL
-	
 	MOV AH,09H
 	LEA DX, MENU1RE5
 	INT 21H
@@ -710,14 +707,15 @@ MENU3 PROC
 	
 	CALL MENU3_INPUT_BIN_CONFIRMATION	;if AX != 0, ask the user if they want to continue with the value
 	CMP AL, "Y"							;if user chose "Yes, continue with this value",
-	JE	MENU3_NEXT_INPUT				;jump to processing, else get value
+	JE	MENU3_DONE_INPUT				;jump to processing, else get value
 	
 	MENU3_INPUT_BIN_NULL:
 	CALL MENU3_INPUT_BIN_PROC			
 	JMP MENU3_DONE_INPUT
 	
-	
 	MENU3_DONE_INPUT:
+	CALL MENU3_REPORT_PROC
+	
 	MOV AH,09H		;
 	LEA DX,MEN1 	;	============================
 	INT 21H			;
@@ -739,16 +737,11 @@ MENU3 ENDP
 
 MENU3_INPUT_PAY_CONFIRMATION PROC
 	MOV DX, 0					;DX = 0
-	MOV AX, TTL_HOUR_PAY		;AX = 345
+	MOV AX, TTL_HOUR_PAY		;AX = 34500
+	MOV DI, OFFSET MENU3CF_PAY_2		;Location of the string you want to inject
+	ADD DI, 31					;Index of the string to begin injecting
+	CALL INJECT_DW_STRING
 
-	DIV TENW					;AX = 34	;DX = 5
-	DIV TENB					;AL = 3		;AH = 4
-	ADD AX, 3030H				;ADD AL,"0"	;ADD AH,"0"
-	ADD DL, 30H					;ADD DL,"0"
-	MOV MENU3CF_PAY_2[29], AL	;The location of the column 'Total Pay'
-	MOV MENU3CF_PAY_2[30], AH	;
-	MOV MENU3CF_PAY_2[31], DL	;
-	
 	MENU3_INPUT_PAY_CF_PROMPT:
 	MOV AH,09H
 	LEA DX,MENU3CF_PAY_1
@@ -786,7 +779,7 @@ MENU3_INPUT_PAY_PROC PROC
 	MENU3_INPUT_PAY_START:
 		MOV AX, TTL_HOUR_PAY		;Value you want to display
 		MOV DI, OFFSET MENU3IN1		;Location of the string you want to inject
-		ADD DI, 28					;Index of the string to begin injecting
+		ADD DI, 30					;Index of the string to begin injecting
 		CALL INJECT_DW_STRING
 		
 		MOV AH, 09H
@@ -873,7 +866,7 @@ MENU3_INPUT_BIN_PROC PROC
 	MENU3_INPUT_BIN_START:
 		MOV AX, TTL_BIN_VALUE_AX	;Value you want to display
 		MOV DI, OFFSET MENU3IN2		;Location of the string you want to inject
-		ADD DI, 28					;Index of the string to begin injecting
+		ADD DI, 30					;Index of the string to begin injecting
 		CALL INJECT_DW_STRING
 		
 		MOV AH, 09H
@@ -913,6 +906,24 @@ MENU3_INPUT_BIN_PROC PROC
 	MENU3_INPUT_BIN_DONE:
 	RET
 MENU3_INPUT_BIN_PROC ENDP
+
+MENU3_REPORT_PROC PROC
+	
+	MOV AX, TTL_HOUR_PAY			;Value you want to display
+	MOV DI, OFFSET MENU3RE4			;Location of the string you want to inject
+	ADD DI, 8						;Index of the string to begin injecting
+	CALL INJECT_DW_STRING
+	
+	MOV AX, TTL_BIN_VALUE_AX		;Value you want to display
+	MOV DX, TTL_BIN_VALUE_DX		;DX:AX = 1234567
+	MOV DI, OFFSET MENU3RE4 		;Location of the string you want to inject
+	ADD DI, 17						;Index of the string to begin injecting
+	CALL INJECT_DD_STRING			;
+	
+	
+	
+	RET
+MENU3_REPORT_PROC ENDP
 
 DISPLAY_MENU PROC
 	MOV AH,09H	;
