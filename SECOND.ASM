@@ -194,9 +194,10 @@
 	
 	PASSWRD DB "password$"
 	PASS_IN	DB 9 DUP (?)
-	INPUT	DB ?
 	
+	INPUT	DW ?
 	AXX DW ?
+	AHH	DB ?
 	CXX DW ?	;
 	SII DW ?	;
 	DII DW ?
@@ -883,25 +884,60 @@ MENU3_INPUT_BIN_PROC PROC
 		JL	MENU3_INPUT_BIN_START
 		CMP AL, "9"					;If greater than "9"
 		JG	MENU3_INPUT_BIN_START
-		MOV AH, 0
-		SUB AL, "0"					;From char to int
-		MOV BX, AX					;Save for later as AX will get overwritten by the next statement
+		CMP TTL_BIN_VALUE_DX, 9		;IF OVERLOADED
+		JG	MENU3_INPUT_BIN_OVERFLOW	
 		
-		MOV AX, TTL_BIN_VALUE_AX	;Import from var
+		MOV AH, 0					;Input valid and not overloaded
+		SUB AL, "0"					;From char to int
+		MOV INPUT, AX				;Save for later as AX will get overwritten by the next statement
+		
 		MOV DX, 0
+		MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
 		MUL TENW				 	;Multiply by 10
+		
+		ADD AX, INPUT
+		MOV TTL_BIN_VALUE_AX, AX
+		MOV AXX, DX
+		
+		MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
+		MUL TENB				 	;Multiply by 10
+		ADD AX, AXX					;ADD CARRY OF AX TO AX(DX)
+		MOV AH, 0
+		MOV TTL_BIN_VALUE_DX, AX	;Then update array
+
 		
 		ADD AX, BX					;Add input value to (TTL_BIN_VALUE_AX * 10)
 		MOV TTL_BIN_VALUE_AX, AX	;Then update var
 		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_BACKSPACE:
-		MOV AX, TTL_BIN_VALUE_AX	;Import from var
-		MOV DX, 0					
-		DIV TENW				 	;Divide by 10
+		MOV AX, TTL_BIN_VALUE_DX	;Value to divide
+		DIV TENB				 	;Divide by 10
+		MOV AHH, AH
+		MOV AH, 0
+		MOV TTL_BIN_VALUE_DX, AX
 		
-		MOV TTL_HOUR_PAY, AX		;Then store it back to var
-		JMP MENU3_INPUT_PAY_START
+		MOV AX, TTL_BIN_VALUE_AX
+		MOV DH, 0
+		MOV DL, AHH					;Move remainder to DX
+		DIV TENW
+		
+		MOV TTL_BIN_VALUE_AX, AX 	;Then update array
+		
+		JMP MENU3_INPUT_BIN_START
+		
+	MENU3_INPUT_BIN_OVERFLOW:
+		;MAX 2 BYTES CAN HOLD ‭65535‬
+		;DX:AX can hold ‭65535‬00 no problem
+		;but later INJECT_DD_STRING function will need to hold the qoutient of it
+		;so we need to have a fail safe, prevent OVERFLOW from happening
+		MOV TTL_BIN_VALUE_AX, 65436	;Just give them max possible value
+		MOV TTL_BIN_VALUE_DX, 49	;‭0031:FF9C‬ Hex = 32767
+		;for some reason it can display 32767.00, but not 32768.00 and above (let alone ‭65535‬).
+		;65535 is twice of 32767 + 1
+		;INJECT_DD_STRING didn't even use signed division. idk man im tired.
+		
+		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_DONE:
 	RET
