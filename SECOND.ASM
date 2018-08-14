@@ -3,9 +3,9 @@
 .DATA
 	;AACS3064 COMPUTER SYSTEMS ARCHITECTURE
     
-	;VerniyLust 	(Brendan Chew Jian Wen	)	[Pointers		, Address			]
-	;Shiina 		(Chia Wei Xiang			)	[Display Table	, String Injecting	]
-	;Scrum Master 	(Soo Cia Yang			)	[Function Calls	, 5 Digit Input		]
+	;VerniyLust 	(Brendan Chew Jian Wen	)	[Pointers		, 32bit Simulation	]
+	;Shiina 		(Chia Wei Xiang			)	[Table Design	, Login Function	]
+	;Scrum Master 	(Soo Cia Yang			)	[Function Calls	, String Injecting	, 7 Digit Display	]
 	
 	;Link below is the github repo of this project
     ;https://github.com/rockneverendz/AACS3064-Assembly-Assignment
@@ -165,7 +165,8 @@
 	COMM_VALUE_AX	DW 0
 	COMM_VALUE_DX	DW 0
 	
-	
+	CONT_COUNT DB 0
+
 	RESULTB	DB ?
 			DB ?
 			DB ?
@@ -655,6 +656,10 @@ MENU2_REPORT_PROC PROC
 MENU2_REPORT_PROC ENDP
 		
 MENU3 PROC
+
+	CMP CONT_COUNT, 2					;Skip input if both reports are generated
+	JE	MENU3_DONE_INPUT
+	
 	MOV AH,09H	;
 	LEA DX,MEN1 ;	============================
 	INT 21H		;
@@ -684,7 +689,7 @@ MENU3 PROC
 	; 		"Please enter bin value"
 	; 	}
 	; }
-	
+
 	CMP TTL_HOUR_PAY, 0					
 	JE  MENU3_INPUT_PAY_NULL			;if TTL_HOUR_PAY == 0, ask the user to enter it
 	
@@ -753,7 +758,7 @@ MENU3_INPUT_PAY_CONFIRMATION PROC
 	CMP AL, "Y"
 	JE	MENU3_INPUT_PAY_CF_VALID
 	CMP AL, "y"
-	JE	MENU3_INPUT_PAY_CF_VALID_EDIT	;UNDERSTAND INPUT BUT CAPITALIZE "n"
+	JE	MENU3_INPUT_PAY_CF_VALID_EDIT	;UNDERSTAND INPUT BUT CAPITALIZE "y"
 	CMP AL, "N"
 	JE	MENU3_INPUT_PAY_CF_VALID
 	CMP AL, "n"
@@ -773,9 +778,9 @@ MENU3_INPUT_PAY_PROC PROC
 	INT 21H
 	
 	MENU3_INPUT_PAY_START:
-		MOV AX, TTL_HOUR_PAY		;Value you want to display
-		MOV DI, OFFSET MENU3IN1		;Location of the string you want to inject
-		ADD DI, 30					;Index of the string to begin injecting
+		MOV AX, TTL_HOUR_PAY		;Display (previous value*10) + userInput
+		MOV DI, OFFSET MENU3IN1		;
+		ADD DI, 30					;Index of the little box
 		CALL INJECT_DW_STRING
 		
 		MOV AH, 09H
@@ -802,7 +807,7 @@ MENU3_INPUT_PAY_PROC PROC
 		
 		MOV DX, 0
 		MOV AX, TTL_HOUR_PAY		;Import from var
-		MUL TENW				 	;Multiply by 10
+		MUL TENW				 	;Multiply by 10 (word)
 		
 		ADD AX, BX					;Add input value to (TTL_HOUR_PAY * 10)
 		MOV TTL_HOUR_PAY, AX		;Then update var
@@ -811,7 +816,7 @@ MENU3_INPUT_PAY_PROC PROC
 	MENU3_INPUT_PAY_BACKSPACE:
 		MOV AX, TTL_HOUR_PAY		;Import from var
 		MOV DX, 0					
-		DIV TENW				 	;Divide by 10
+		DIV TENW				 	;Divide by 10 (word)
 		
 		MOV TTL_HOUR_PAY, AX		;Then store it back to var
 		JMP MENU3_INPUT_PAY_START
@@ -825,10 +830,10 @@ MENU3_INPUT_PAY_PROC PROC
 MENU3_INPUT_PAY_PROC ENDP
 
 MENU3_INPUT_BIN_CONFIRMATION PROC
-	MOV AX, TTL_BIN_VALUE_AX		;INSERT TTL_BIN_VALUE INTO MENU2RE5 CHARACTER BY CHARACTER
-	MOV DX, TTL_BIN_VALUE_DX		;DX:AX = 1234567
-	MOV DI, OFFSET MENU3CF_BIN_2	;Location of the string you want to inject
-	ADD DI, 29						;Index of the string to begin injecting
+	MOV AX, TTL_BIN_VALUE_AX		;Display (previous value*10) + userInput
+	MOV DX, TTL_BIN_VALUE_DX		;
+	MOV DI, OFFSET MENU3CF_BIN_2	;
+	ADD DI, 29						;Index of the little box
 	CALL INJECT_DD_STRING
 	
 	MENU3_INPUT_BIN_CF_PROMPT:
@@ -846,7 +851,7 @@ MENU3_INPUT_BIN_CONFIRMATION PROC
 	CMP AL, "Y"
 	JE	MENU3_INPUT_BIN_CF_VALID
 	CMP AL, "y"
-	JE	MENU3_INPUT_BIN_CF_VALID_EDIT	;UNDERSTAND INPUT BUT CAPITALIZE "n"
+	JE	MENU3_INPUT_BIN_CF_VALID_EDIT	;UNDERSTAND INPUT BUT CAPITALIZE "y"
 	CMP AL, "N"
 	JE	MENU3_INPUT_BIN_CF_VALID
 	CMP AL, "n"
@@ -892,50 +897,52 @@ MENU3_INPUT_BIN_PROC PROC
 		
 		MOV AH, 0					;Input valid and not overloaded
 		SUB AL, "0"					;From char to int
-		MOV BX, AX				;Save for later as AX will get overwritten by the next statement
+		MOV BX, AX					;Save for later as AX will get overwritten by the next statement
 		
-		MOV DX, 0
+		MOV DX, 0					;Doing simulated 32bit multiplication
 		MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
-		MUL TENW				 	;Multiply by 10
+		MUL TENW				 	;Multiply by 10 (word)
 		
 		ADD AX, BX
 		MOV TTL_BIN_VALUE_AX, AX
-		MOV AXX, DX
+		MOV BX, DX					;SAVE CARRY FOR LATER
 		
 		MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
-		MUL TENB				 	;Multiply by 10
-		ADD AX, AXX					;ADD CARRY OF AX TO AX(DX)
+		MUL TENB				 	;Multiply by 10 (byte)
+		ADD AX, BX					;ADD CARRY OF AX TO AX(DX)
 		MOV AH, 0
-		MOV TTL_BIN_VALUE_DX, AX	;Then update array
+		MOV TTL_BIN_VALUE_DX, AX	;Then update DX
 
 		JMP MENU3_INPUT_BIN_START
 		
-	MENU3_INPUT_BIN_BACKSPACE:
-		MOV AX, TTL_BIN_VALUE_DX	;Value to divide
-		DIV TENB				 	;Divide by 10
-		MOV AHH, AH					;HOLD REMAINDER FOR LATER DIV
+	MENU3_INPUT_BIN_BACKSPACE:		;Doing simulated 32bit divition
+		MOV AX, TTL_BIN_VALUE_DX	;DIVIDE DX
+		DIV TENB				 	;Divide by 10 (byte)
+		MOV BL, AH					;HOLD REMAINDER FOR LATER DIV
 		MOV AH, 0
 		MOV TTL_BIN_VALUE_DX, AX
 		
-		MOV AX, TTL_BIN_VALUE_AX
+		MOV AX, TTL_BIN_VALUE_AX	;DIVIDE AX
 		MOV DH, 0
-		MOV DL, AHH					;Move remainder to DX
-		DIV TENW
+		MOV DL, BL					;Move remainder to DX
+		DIV TENW					;Divide by 10 (word)
 		
-		MOV TTL_BIN_VALUE_AX, AX 	;Then update array
+		MOV TTL_BIN_VALUE_AX, AX 	;Then update AX
 		
 		JMP MENU3_INPUT_BIN_START
 		
 	MENU3_INPUT_BIN_OVERFLOW:
+		;=====REASON=====
 		;MAX 2 BYTES CAN HOLD ‭65535‬
 		;DX:AX can hold ‭65535‬00 no problem
 		;but later INJECT_DD_STRING function will need to hold the qoutient of it
 		;so we need to have a fail safe, prevent OVERFLOW from happening
-		MOV TTL_BIN_VALUE_AX, 65436	;Just give them max possible value
-		MOV TTL_BIN_VALUE_DX, 49	;‭0031:FF9C‬ Hex = 32767
+		;=====RESULT====
 		;for some reason it can display 32767.00, but not 32768.00 and above (let alone ‭65535‬).
 		;65535 is twice of 32767 + 1
 		;INJECT_DD_STRING didn't even use signed division. idk man im tired.
+		MOV TTL_BIN_VALUE_AX, 65436	;Just give them max possible value
+		MOV TTL_BIN_VALUE_DX, 49	;‭0031:FF9C‬ Hex = 32767
 		
 		JMP MENU3_INPUT_BIN_START
 		
@@ -945,77 +952,64 @@ MENU3_INPUT_BIN_PROC ENDP
 
 MENU3_REPORT_PROC PROC
 	
-	MOV AX, TTL_HOUR_PAY			;Value you want to display
-	MOV DI, OFFSET MENU3RE4			;Location of the string you want to inject
-	ADD DI, 8						;Index of the string to begin injecting
+	MOV AX, TTL_HOUR_PAY			;Display Total Hour Pay
+	MOV DI, OFFSET MENU3RE4			;
+	ADD DI, 8						;Index of Hour Pay
 	CALL INJECT_DW_STRING
 	
-	MOV AX, TTL_BIN_VALUE_AX		;Value you want to display
-	MOV DX, TTL_BIN_VALUE_DX		;DX:AX = 1234567
-	MOV DI, OFFSET MENU3RE4 		;Location of the string you want to inject
-	ADD DI, 17						;Index of the string to begin injecting
+	MOV AX, TTL_BIN_VALUE_AX		;Display Total Bin Value
+	MOV DX, TTL_BIN_VALUE_DX		;
+	MOV DI, OFFSET MENU3RE4 		;
+	ADD DI, 17						;Index of Bin Value
 	CALL INJECT_DD_STRING			;
 	
-	; MOV DX, 0
-	; MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
-	; MUL COMM_RATE				;Multiply by 8
+	MOV AX, COMM_RATE				;Display COMM_RATE
+	ADD AL, "0"
+	MOV MENU3RE4[34], AL
+	MOV MENU3RE4[35], "%"
 	
-	; MOV BX, AX					;DX:AX TO CX:BX
-	; MOV AXX, DX					;
-	
-	; MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
-	; MUL COMM_RATE			 	;Multiply by 10
-	; ADD AX, AXX					;ADD CARRY OF AX TO AX(DX)
-	
-	; MOV DX, 0
-	; DIV HUNDRED
-	; MOV AHH, DL					;HOLD REMAINDER FOR LATER DIV
-	; MOV COMM_VALUE_DX, AX
-	
-	; MOV AX, BX
-	; MOV DH, 0
-	; MOV DL, AHH					;Move remainder to DX
-	; DIV TENW
-	; MOV COMM_VALUE_AX, AX 	;Then update array
-	
-	;multiply 8 
-	
-	MOV DX, 0
-	MOV AX, TTL_BIN_VALUE_AX	;MULTI AX
-	MUL COMM_RATE				;Multiply by 10
-	
-	MOV COMM_VALUE_AX, AX
-	MOV AXX, DX
-	
-	MOV AX, TTL_BIN_VALUE_DX	;MULTI DX
-	MUL COMM_RATE			 	;Multiply by 10
-	ADD AX, AXX					;ADD CARRY OF AX TO AX(DX)
-	MOV COMM_VALUE_DX, AX		;Then update array
+									;Calcuate Commission
+	MOV DX, 0						;Doing simulated 32bit multiplication
+	MOV AX, TTL_BIN_VALUE_AX		;MULTI AX
+	MUL COMM_RATE					;Multiply by COMM_RATE
 
-	;divide 100 ;largest possible value from above is 018FFCE0
+	MOV COMM_VALUE_AX, AX	
+	MOV BX, DX						;MOV CARRY TO VARIABLE
 	
-	MOV AX, COMM_VALUE_DX	;Value to divide
-	DIV HUNDREB				 	;Divide by 10
-	MOV AHH, AH					;HOLD REMAINDER FOR LATER DIV
+	MOV AX, TTL_BIN_VALUE_DX		;MULTI DX
+	MUL COMM_RATE			 		;Multiply by COMM_RATE
+	ADD AX, BX						;ADD CARRY OF AX TO AX(DX)
+	MOV COMM_VALUE_DX, AX			;Then update DX
+
+									;Doing simulated 32bit divition ;Lragest possible value from above is 018FFCE0
+	MOV AX, COMM_VALUE_DX			;DIVIDE DX
+	DIV HUNDREB						;Divide by 100 (byte)
+	MOV BL, AH						;HOLD REMAINDER FOR LATER DIV
 	MOV AH, 0
 	MOV COMM_VALUE_DX, AX
-	
-	MOV AX, COMM_VALUE_AX
-	MOV DH, 0
-	MOV DL, AHH					;Move remainder to DX
-	DIV HUNDRED
-	
-	MOV COMM_VALUE_AX, AX 	;Then update array
-	
-	
-	MOV AX, COMM_VALUE_AX		;Value you want to display
-	MOV DX, COMM_VALUE_DX		;DX:AX = 1234567
-	MOV DI, OFFSET MENU3RE4		;Location of the string you want to inject
-	ADD DI, 39					;Index of the string to begin injecting
+			
+	MOV AX, COMM_VALUE_AX			;DIVIDE AX
+	MOV DH, 0						;Zeroing impossible value
+	MOV DL, BL						;Move remainder to DX
+	DIV HUNDRED						;Divide by 100 (word)
+			
+	MOV COMM_VALUE_AX, AX 			;Then update AX
+
+	MOV AX, COMM_VALUE_AX			;Display Calculated Commission
+	MOV DX, COMM_VALUE_DX			;
+	MOV DI, OFFSET MENU3RE4			;
+	ADD DI, 39						;Index of Commission
 	CALL INJECT_DD_STRING		
 
+	MOV AX, COMM_VALUE_AX			;CALCULATE SALARY
+	ADD AX, TTL_HOUR_PAY			;ADD TOTAL HOUR PAY TO COMM_VALUE_AX
+	MOV DX, COMM_VALUE_DX			;
+	ADC DX, 0						;ADD CARRY TO COMM_VALUE_DX
 	
-	
+	MOV DI, OFFSET MENU3RE4			;
+	ADD DI, 50						;Index of Salary
+	CALL INJECT_DD_STRING		
+
 	RET
 MENU3_REPORT_PROC ENDP
 
@@ -1191,23 +1185,29 @@ CONTINUE PROC
 	MOV AH,09H	;
 	LEA DX,CONT	;"CONTINUE?"
 	INT 21H		;
-				;
+
 	MOV AH,01H	;INPUT CHAR
 	INT 21H		;
 	
 	CMP AL, "Y"
-	JE	CEND
+	JE	CEND_YES
 	CMP AL, "y"
-	JE	CEND
+	JE	CEND_YES
 	CMP AL, "N"
-	JE	CEND
+	JE	CEND_NO
 	CMP AL, "n"
-	JE	CEND_E_N;UNDERSTAND INPUT BUT CAPITALIZE "n"
+	JE	CEND_NO
 	
 	JMP CLOOP	;DOENS'T UNDERSTAND INPUT, RE-PROMPT
 	
-	CEND_E_N:
-	MOV AL, "N"
+	CEND_YES:
+	INC CONT_COUNT
+	JMP CEND
+
+	CEND_NO:
+	MOV AL, "N"	;Capitalize lowercase N ;Standardize output
+	MOV CONT_COUNT, 0
+
 	CEND:
 	RET
 CONTINUE ENDP
