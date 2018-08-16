@@ -18,8 +18,9 @@
 	
 	NEWL DB 0DH,0AH,"$"
 	
-	LGIN DB 0DH,0AH,"   ENTER PASSWORD : $"
-	LGIN_ERROR DB 0DH,0AH,"                    INVALID LOGIN, PLEASE TRY AGAIN.$"
+	LGIN		DB 0DH,0AH,"   ENTER PASSWORD : $"
+	LGIN_ERROR	DB 0DH,0AH,"                    INVALID LOGIN, PLEASE TRY AGAIN.$"
+	LGIN_E3		DB 0DH,0AH,"                    INVALID LOGIN 3 TIMES, USER AUTHENTICATION FAILED.$"
 	
 	WLC1 DB 0DH,0AH,"          ",201,37 DUP (205),187,"$"
 	WLC2 DB 0DH,0AH,"          ",186,"  Welcome to New Zealand Apple Farm  ",186,"$"
@@ -102,11 +103,18 @@
 	APPLEN	 DB 0DH,0AH,"  ",179,"0",179," NONE                     ",179,"                         ",179,"$"
 	APPLE4	 DB 0DH,0AH,"  ",192,196,193,26 DUP (196)                ,193,25 DUP (196)               ,217,"$"
 
+	REP_GEN1 DB 0DH,0AH,"  ",213,54 DUP (205)                                                  ,184,"$"
+	REP_GEN2 DB 0DH,0AH,"  ",179," Thank you for using this program                     "      ,179,"$"
+	REP_GEN3 DB 0DH,0AH,"  ",198,29 DUP (205)                   ,209, 24 DUP (205)             ,181,"$"
+	REP_GEN4 DB 0DH,0AH,"  ",179," Number of reports generated ",179,"                        ",179,"$"
+	REP_GEN5 DB 0DH,0AH,"  ",192,29 DUP (196)                   ,193, 24 DUP (196)             ,217,"$"
+	;38
 	;https://en.wikipedia.org/wiki/Code_page_437 for more box drawing characters	
 	;┌─┬┐	218	196	194	191
 	;│ ││	179		179	179
 	;├─┼┤	195	196	197	180
 	;└─┴┘	192	196	193	217
+	;╒═╤╕	213 205 209 184
 	;╞═╪╡	198	205	216	181
 	;╘═╧╛	212	205	207	190	
 
@@ -166,7 +174,8 @@
 	COMM_VALUE_DX	DW 0
 	
 	CONT_COUNT DB 0
-
+	REPORT_COUNT DB 0
+	
 	RESULTB	DB ?
 			DB ?
 			DB ?
@@ -189,7 +198,9 @@
 	NULL	DB " "
 	
 	PASSWRD DB "password$"
-	PASS_IN	DB 9 DUP (?)
+	PASS_IN	DB 9 DUP ('$')
+	ERASE	DB 8,' ',8,'$'
+	FAILED_COUNT DB 0
 	
 	INPUT	DW ?
 	AXX DW ?
@@ -210,51 +221,70 @@ LOGIN PROC
 	LEA DX,LGIN ;
 	INT 21H		;
 	
-	
-	MOV CX, 8   	; GET 8 CAHRS   
-    LEA SI, PASS_IN ; BUFFER TO HOLD PASSWORD
-    MOV DL, "*" 	;  DL TO HOLD '*' TO PRINT LATER
-    
-	INPUTPASS:
+	MOV SI, 0
+   	
+	INPUTPASS_START:
 		MOV AH,07H	;GET CHAR
 		INT 21H
-		MOV [SI], AL
 		
-		MOV AH, 02H	;PRINT '*'
-		INT 21H		;'*' IS ALREADY IN DL
+		CMP AL, 13					;If enter key
+		JE	INPUTPASS_DONE
+		CMP AL, 8					;If backspace
+		JE	INPUTPASS_BACKSPACE
+		
+		CMP SI, 8			;If max number of character reached
+		JE  INPUTPASS_START	;Ignore input
+		
+		MOV PASS_IN[SI], AL
+		
+		MOV AH, 02H	;PRINT '*' 
+		MOV DL, "*" ;ASTERISK 
+		INT 21H
 		
 		INC SI		;INCREASE PASS_IN INDEX 
-    LOOP INPUTPASS 	;CONTINUE UNTIL CX = 0
-
-    MOV BYTE PTR[SI], "$"	;PROPERLY TERMINATING THE STRING
-							;BYTE PTR SOLVES "OPERAND MUST HAVE THE SAME TYPE"
+		JMP INPUTPASS_START
+	INPUTPASS_BACKSPACE:
+		CMP SI, 0			;If there's nothing to delete
+		JE  INPUTPASS_START	;Ignore input
+	
+		MOV AH,09H	
+		LEA DX,ERASE
+		INT 21H
 		
+		DEC SI
+		MOV PASS_IN[SI], "$"
+		JMP INPUTPASS_START
+    INPUTPASS_DONE:
+
 	MOV CX, 8			;COMPARE 8 CHARACTERS
-	MOV SI, OFFSET PASSWRD
-	MOV DI, OFFSET PASS_IN
+	MOV SI, 0
 	COMPARE:
-		MOV AL, [SI]	;
-		CMP AL, [DI]	;COMPARE CHARACTER BY CHARACTER
-		JNE LOGERROR	;ABORT LOOP WHEN 1 CHAR IS NOT THE SAME
-		INC SI			;
-		INC DI			;
-	LOOP COMPARE		;
-	JMP RETURN			;JUMP TO RETURN AFTER LOOP IS COMPLETED (NOT ABORTED)
+		MOV AL, PASSWRD[SI]	;
+		CMP AL, PASS_IN[SI]	;COMPARE CHARACTER BY CHARACTER
+		JNE LOGERROR		;ABORT LOOP WHEN 1 CHAR IS NOT THE SAME
+		INC SI				;
+	LOOP COMPARE			;
+	JMP RETURN				;JUMP TO RETURN AFTER LOOP IS COMPLETED (NOT ABORTED)
 	
 	LOGERROR:
+	INC FAILED_COUNT
+
+	CMP FAILED_COUNT, 3
+	JE  TERMINATE	
+	
 	MOV AH,09H	
 	LEA DX,LGIN_ERROR
-	INT 21H		
-;	MOV AH, 09H			;//  //  //  //  // 
-;	LEA DX, NEWL		;Debug purposes only
-;	INT 21H				;  //  //  //  //  /
-;	LEA DX, PASS_IN		;Debug purposes only	;DISPLAY ENTERED PASSWORD
-;	INT 21H				;//  //  //  //  // 
-;	LEA DX, NEWL		;Debug purposes only	
-;	INT 21H				;  //  //  //  //  /
-;	LEA DX, PASSWRD		;Debug purposes only	;DISPLAY VALID PASSWORD
-;	INT 21H				;//  //  //  //  // 
+	INT 21H	
+	
 	JMP RELOGIN;
+	
+	TERMINATE:
+	MOV AH,09H	
+	LEA DX,LGIN_E3
+	INT 21H	
+	
+	MOV AX,4C00H
+	INT 21H
 	
 	RETURN:
 	RET
@@ -658,7 +688,7 @@ MENU2_REPORT_PROC ENDP
 MENU3 PROC
 
 	CMP CONT_COUNT, 2					;Skip input if both reports are generated
-	JE	MENU3_DONE_INPUT
+	JGE	MENU3_DONE_INPUT
 	
 	MOV AH,09H	;
 	LEA DX,MEN1 ;	============================
@@ -1181,6 +1211,7 @@ INJECT_DW_STRING PROC
 INJECT_DW_STRING ENDP
 
 CONTINUE PROC
+	INC REPORT_COUNT	;Add one to the number of reports generated
 	CLOOP:
 	MOV AH,09H	;
 	LEA DX,CONT	;"CONTINUE?"
@@ -1224,7 +1255,7 @@ MAIN PROC
 	MOV AX,@DATA
 	MOV DS,AX
 	;----BEGIN----
-;	CALL LOGIN	;PROCEED WHEN LOGIN INFO IS VALID	;Just remember to reenable this procedure call when presenting
+	CALL LOGIN	;PROCEED WHEN LOGIN INFO IS VALID	;Just remember to reenable this procedure call when presenting
 	CALL POINTER;PREPARING POINTERS FOR EASIER NAVIGATION
 	Q:			;
 	MOV AH,09H	;
@@ -1272,8 +1303,31 @@ MAIN PROC
 	CMP AL, "N"		;
 	JE Q			;
 	JMP M1			;ELSE CONTINUE TO M1
-	;----END----
+	
 	QUIT:
+	
+	MOV AH, 0
+	MOV AL, REPORT_COUNT
+	DIV TENB
+	
+	ADD AX, 3030H
+	MOV REP_GEN4[38], AL
+	MOV REP_GEN4[39], AH
+	
+	MOV AH,09H	;
+	LEA DX,REP_GEN1 ;   ===============
+	INT 21H		;
+	LEA DX,REP_GEN2 ;	Thank you
+	INT 21H		;
+	LEA DX,REP_GEN3 ;   ===============
+	INT 21H		;
+	LEA DX,REP_GEN4 ;	Report Generated
+	INT 21H		;
+	LEA DX,REP_GEN5 ;   ===============
+	INT 21H		;
+	
+	;----END----
+
 	MOV AX,4C00H
 	INT 21H
 MAIN ENDP
